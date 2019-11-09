@@ -7,18 +7,17 @@ gr()
 =#
 DataNum =1  #シミュレータ反復回数
 dt = 60*5 ##シミュレータの計算間隔 [s]
+t = DatetoJD(2019, 11, 07, 16, 10, 00)   #シミュレート開始時刻＠ユリウス日
 
 
+#開始時のみ処理
 tles = read_tle("ISS_TLE.txt") #TLE読み込み
 orbp = init_orbit_propagator(Val{:sgp4}, tles[1]) #SGP4での軌道モデルの読み込み 
 eop_IAU2000A = get_iers_eop(:IAU2000A)  #IAU-2000Aでの地球モデルの読み込み
-t = DatetoJD(2019, 11, 07, 16, 10, 00)   #シミュレート開始時刻＠ユリウス日
-#println(tles[1].epoch_year)
 epoch_JD = DatetoJD(2000+tles[1].epoch_year, 1, 1, 00, 00, 00) + tles[1].epoch_day  #TLEの元期＠ユリウス日 
-#println(t-epoch_JD)
-
 o, r, v = propagate!(orbp, t - epoch_JD)
 
+#ループ毎処理関数定義
 function SatPlaceCal(n)
     #=  衛星位置の赤道面座標系での計算　=#
     o, r, v = step!(orbp, dt)
@@ -28,12 +27,11 @@ function SatPlaceCal(n)
     return xg, vg
 end
 
-x_ecef_log = zeros(100, 3)
-x_geod_log = zeros(100, 3)
-v_ecef_log = zeros(100, 3)
+x_ecef_log = zeros(100, 3)    #衛星位置＠地心直交座標系
+x_geod_log = zeros(100, 3)    #衛星位置＠測地座標系
+v_ecef_log = zeros(100, 3)    #衛星速度＠地心直交座標系
 
-
-
+#シミュレーションループ
 for i=1:DataNum
     x_sat, v_sat = SatPlaceCal(i)
     x_ecef_log[i,:] = x_sat
