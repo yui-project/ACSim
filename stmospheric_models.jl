@@ -1,4 +1,7 @@
 using SatelliteToolbox
 using LinearAlgebra
 
-衛星高度における大気密度スカラー量
+#require height of spacecraft
+height = v*v
+
+#require atmosphere density
