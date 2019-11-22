@@ -1,5 +1,6 @@
 using SatelliteToolbox
 
+#=*******************************
 #noem of velocity vector v[km/s]
 v = 7.66#norm(V)
 
@@ -11,6 +12,7 @@ println(h)
 
 #require atmosphere density[kg/m^3]
 println(expatmosphere(h))
+********************************=#
 
 #v:norm of velocity vector v 
 function atmospheric_models(v)
