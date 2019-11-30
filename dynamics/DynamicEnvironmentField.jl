@@ -5,7 +5,7 @@ using Quaternions
 
 #全トルクを求める
 function Torque(x)
-    t=
+    t=[0;0;0]
     return t
 end
 
