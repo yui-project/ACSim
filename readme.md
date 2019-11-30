@@ -9,7 +9,7 @@ main.jl
 -  /stellite
 
 
-## gitの使い方
+## 最速gitの使い方
 1. git pull
 1. コードをごにょごにょ編集
 1. git add .
