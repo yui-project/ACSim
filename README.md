@@ -1,2 +1,0 @@
-# AttitudeControlSystem_Simulator
-ITF-3の姿勢制御シミュレーター2019

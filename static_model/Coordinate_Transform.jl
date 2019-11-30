@@ -1,6 +1,6 @@
 using ReferenceFrameRotations
 using LinearAlgebra
-using Gnuplot
+#using Gnuplot
 
 # 位置と速度から座標変換のための方向余弦行列を求める
 function getDCM(v,r)
@@ -11,6 +11,12 @@ function getDCM(v,r)
     return C
 end
 
+function transform_coordinate(C, r)
+    
+    
+end
+
+"""
 # 方向余弦行列を用いてベクトルを変換
 v = [2.0,0.0,0.0]
 r = [1.0,1.0,1.0]
@@ -21,3 +27,4 @@ save("test2.gp")
 
 C = getDCM(v,r)
 println(C)
+"""
