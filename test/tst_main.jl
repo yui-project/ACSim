@@ -10,6 +10,7 @@ I=
 
 #トルク生成
 function Torque()
+end
 #ダイナミクス呼び出し
 
 #プロット
