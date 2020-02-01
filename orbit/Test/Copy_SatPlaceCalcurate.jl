@@ -5,9 +5,9 @@ gr()
 #=
 設定パラメータ
 =#
-DataNum =100 #シミュレータ反復回数
-dt = 5 ##シミュレータの計算間隔 [s]
-t0 = DatetoJD(2019, 12, 19, 3, 27, 10)   #シミュレート開始時刻＠ユリウス日
+DataNum =250 #シミュレータ反復回数
+dt = 30 ##シミュレータの計算間隔 [s]
+t0 = DatetoJD(2019, 12, 19, 8, 27, 21)   #シミュレート開始時刻＠ユリウス日
 TLEFileName = "ISS_TLE.txt"
 
 #事前準備関数定義
@@ -47,14 +47,19 @@ for i=1:DataNum
     x_sat, v_sat = SPCal(i, t0, dt, orbp, eop_IAU2000A)
     x_ecef_log[i,:] = x_sat
     v_ecef_log[i,:] = v_sat
-    #println(x_ecef_log[i,:])
-    print((i-1)*dt)
-    print(", ")
-    print(x_ecef_log[i,1])
-    print(", ")
-    print(x_ecef_log[i,2])
-    print(", ")
-    println(x_ecef_log[i,3])
+    if i != 1
+        print(x_ecef_log[i,1])
+        print(",")
+        print(x_ecef_log[i,2])
+        print(",")
+        println(x_ecef_log[i,3])
+        #print(",")
+        #print((x_ecef_log[i,1]-x_ecef_log[i-1,1])./dt)
+        #print(",")
+        #print((x_ecef_log[i,2]-x_ecef_log[i-1,2])./dt)
+        #print(",")
+        #println((x_ecef_log[i,3]-x_ecef_log[i-1,3])./dt)
+    end
     x_geo = ECEFtoGeodetic([x_sat[1]; x_sat[2]; x_sat[3]])
     x_geod_log[i,1]=x_geo[1]
     if x_geo[2]>0 

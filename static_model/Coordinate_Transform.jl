@@ -3,7 +3,7 @@ using LinearAlgebra
 #using Gnuplot
 
 # 位置と速度から座標変換のための方向余弦行列を求める
-function getDCM(v,r)
+function get_DCM(v,r)
     e1 = v / norm(v, 2)
     e2 = - cross(r,v) / (norm(r,2) * norm(v,2))
     e3 = - r/ norm(r,2)
@@ -11,10 +11,24 @@ function getDCM(v,r)
     return C
 end
 
-function transform_coordinate(C, r)
-    
+"""
+Satellite Centred Orbit Fixed
+"""
+function vr_to_SCOF()
+    C = get_DCM(v,r)
+    return C * r
+end
+
+
+function SCOFtoECEF()
     
 end
+
+
+function ECEFtoSCOF()
+    
+end
+
 
 """
 # 方向余弦行列を用いてベクトルを変換
