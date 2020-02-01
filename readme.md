@@ -1,7 +1,3 @@
-# AttitudeControlSystem_Simulator
-
-
-
  # 構造について
 - main.jlが全てを呼び出す
     - モジュール内では、orbit.jl、 static_model.jl、dynamic_model.jl、dynamics.jl、satellite.jlが全てを呼び出す。
