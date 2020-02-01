@@ -33,6 +33,8 @@ Earth-Centered Inertial。[Geocentric equatorial coordinates](https://en.wikiped
 進行方向をx軸、地球中心をz軸とする座標系。
 1. 衛星座標系(SCSF?)
 英語では、[Satellite Coordinates](https://gssc.esa.int/navipedia/index.php/Satellite_Coordinates)と書かれる。←ほんまか？
+1. geodetic座標系(geodetic)
+衛星の位置を緯度,経度,高度で表す座標系。主にECEF→geodeticで衛星の高度を求める。
 
 # コーディング規約について
 - コーディング規約[PEP8](https://qiita.com/simonritchie/items/bb06a7521ae6560738a7#命名規則)に則る。と思ってたが、ファイル名命名規則だけ変更！
