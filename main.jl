@@ -1,27 +1,36 @@
-#include("orbit/orbit.jl")
-include("static_model/static_model.jl")
+include("orbit/orbit.jl")
+include("external_model/external_model.jl")
 #include("dynamic_model/dynamic_model.jl")
 #include("dynamics/dynamics.jl")
-include("satellite/satellite.jl")
+#include("satellite/satellite.jl")
+
+using SatelliteToolbox
 using Dates
 
 
-"""
-main
+#=
+設定パラメータ
+=#
+DataNum =1000 #シミュレータ反復回数
+dt = 5 ##シミュレータの計算間隔 [s]
+start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
+TLEFileName = "./orbit/ISS_TLE.txt"
 
-メイン、以下嘘800
+# 軌道計算については先に行い、全時間分を配列に保存する
+JD_log, x_ecef_log , x_geod_log, v_ecef_log= orbit_cal(DataNum,dt,start_time,TLEFileName)
 
-# Arguments
-- `datetime`: 時刻
-- `r_ecef`: 衛星位置
 
-# Returns
-- `sun_vec`: 太陽方向ベクトル
-- `shot_vec`: 撮影地点方向ベクトル
-- `mag_vec`: 地磁場方向ベクトル
-- `atoms_dens`: 大気密度スカラー
+for i=1:10#DataNum
+	current_time = start_time+Second(dt) * i
+	println("\nCurrent DateTime:",current_time)
+	println("        JD:",JD_log[i])
+	println("x_ecef_log:",x_ecef_log[i,:])
 
-"""
-function main()
-    
+	# 衛星外環境モデル
+	mag_vel, sun_vec, atoms_dens = external_model(current_time,x_ecef_log[i,:])
+	println("mag_vel:",mag_vel)
+	println("sun_vec:",sun_vec)
+	println("atoms_dens：",atoms_dens)
+
+
 end

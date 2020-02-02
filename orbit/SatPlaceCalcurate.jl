@@ -1,6 +1,6 @@
 using SatelliteToolbox
-using Plots
-gr()
+#using Plots
+#gr()
 
 #=
 設定パラメータ
@@ -8,7 +8,7 @@ gr()
 DataNum =100 #シミュレータ反復回数
 dt = 5 ##シミュレータの計算間隔 [s]
 t0 = DatetoJD(2019, 12, 19, 3, 27, 10)   #シミュレート開始時刻＠ユリウス日
-TLEFileName = "ISS_TLE.txt"
+TLEFileName = "./orbit/ISS_TLE.txt"
 
 #事前準備関数定義
 function set_SPCal(Name, t0)

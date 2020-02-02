@@ -3,34 +3,6 @@ using SatelliteToolbox
 using Dates
 
 """
-static_model(datetime,r_ecef)
-
-静的環境モデルに関わる全ての計算
-
-# Arguments
-- `datetime`: 時刻
-- `r_ecef`: 衛星位置
-
-# Returns
-- `sun_vec`: 太陽方向ベクトル
-- `shot_vec`: 撮影地点方向ベクトル
-- `mag_vec`: 地磁場方向ベクトル
-- `atoms_dens`: 大気密度スカラー
-
-"""
-function static_model(datetime,r_ecef)
-    date = Date(datetime)
-    jd = DatetoJD(date)
-
-    mag_vel = mag_vec_cal(date,r_ecef)
-    sun_vec = sun_vec_cal(jd)
-    atoms_dens = atoms_dens_cal(height)
-    shot_vec = shot_vec_cal(jd)
-    return mag_vel, sun_vec, atoms_dens
-end
-
-
-"""
 sun_vec_cal(jd::Number)
 
 太陽方向ベクトルを算出する
@@ -69,19 +41,46 @@ end
         r_ecef : 地心座標系(ECEF)による位置3行1列[m]
 @output 
 """
-function mag_vec_cal(date::Number, r_ecef::AbstractVector)
+function mag_vec_cal(cal_year, r_ecef)
     # 筑波大 総合研究棟B r_ecef = [3.957729931663941e6,3.3091914769971482e6,3.737926200042794e6]
     r_geodetic = ECEFtoGeodetic(r_ecef)
     # r_geocentric = GeodetictoGeocentric(r_geocentric)
-    return igrf12(date, norm(r_ecef), r_geodetic[1], r_geodetic[2], show_warns = true)
+    return igrf12(cal_year, norm(r_ecef), r_geodetic[1], r_geodetic[2], show_warns = true)
 end
 
 
 """
 @fn     atoms_dens_cal
 @input  height:衛星高度[m]
-@output density:待機密度
+@output density:大気密度
 """
 function atoms_dens_cal(height)
     return expatmosphere(height)
+end
+
+"""
+external_model(datetime,r_ecef)
+
+衛星外環境モデルに関わる全ての計算
+
+# Arguments
+- `datetime`: 時刻
+- `r_ecef`: 衛星位置
+
+# Returns
+- `sun_vec`: 太陽方向ベクトル
+- `shot_vec`: 撮影地点方向ベクトル
+- `mag_vec`: 地磁場方向ベクトル
+- `atoms_dens`: 大気密度スカラー
+
+"""
+function external_model(current_time,r_ecef,cal_year=2020)
+    jd = DatetoJD(current_time)
+
+    mag_vel = mag_vec_cal(cal_year,r_ecef)
+    sun_vec = sun_vec_cal(jd)
+    atoms_dens = atoms_dens_cal(ECEFtoGeodetic(r_ecef)[3])
+    #shot_vec = shot_vec_cal(jd)
+
+    return mag_vel, sun_vec, atoms_dens
 end
