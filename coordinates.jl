@@ -14,20 +14,34 @@ end
 """
 Satellite Centred Orbit Fixed
 """
-function vr_to_SCOF()
+function ecef_to_DCM(x_ecef,v_ecef,with_print=false)
+    x_ecef_uniten = x_ecef / norm(x_ecef, 2)
+    v_ecef_uniten = v_ecef / norm(v_ecef, 2)
+
+    ez = - x_ecef_uniten
+    ey = cross(v_ecef_uniten,x_ecef_uniten)
+    ex = cross(ey,ez)
+
+    C = inv_rotation(DCM([ex;ey;ez]))
+
+    if with_print == true
+        println("x_ecef_uniten:",x_ecef_uniten)
+        println("v_ecef_uniten:",v_ecef_uniten)
+        println("           ez:",ez)
+        println("           ey:",ey)
+        println("           ex:",ex)
+
+        println("          DCM:",C)
+    end
+    return C
+end
+
+
+function ecef_to_DCMa(x_ecef,v_ecef)
     C = get_DCM(v,r)
     return C * r
 end
 
-
-function SCOFtoECEF()
-    
-end
-
-
-function ECEFtoSCOF()
-    
-end
 
 
 """
