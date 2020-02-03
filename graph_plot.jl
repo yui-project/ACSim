@@ -4,7 +4,7 @@ gr()		# バックエンドの設定
 # ２要素スカラーのプロット
 function plot_2scalar(time,value,filename)
 	plot(time,value)
-	savefig(filename * ".png")
+	savefig("./figs/" * filename * ".png")
 	
 end
 
@@ -15,7 +15,7 @@ function plot_vec(value,filename)
 	ylabel!("y")
 	#zlabel!("z")
 
-	savefig(filename * ".png")
+	savefig("./figs/" * filename * ".png")
 end
 
 
@@ -25,7 +25,7 @@ function plot_2vec_time(time,value,filename)
 	ylabel!("y")
 	#zlabel!("z")
 
-	savefig(filename * ".png")
+	savefig("./figs/" * filename * ".png")
 end
 
 function plot_ecef(x_ecef_log)
@@ -34,5 +34,5 @@ function plot_ecef(x_ecef_log)
 	ylabel!("y")
 	#zlabel!("z")
 
-	savefig("x_cecf.png")
+	savefig("./figs/" * "x_cecf.png")
 end
