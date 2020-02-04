@@ -17,7 +17,7 @@ aer_tor = aerodynamics_torque(C_d, rho, v, a, e_r, e_a, p_c)
 - `aer_tor`：空力トルク（1*3）
 
 """
-function aerodynamic_torque(sur_num, C_d, rho, v, e_r, e_a, p_c)
+function aerodynamic_torque(sur_num, C_d, rho, v, a, e_r, e_a, p_c)
 	tor = zeros(3)
 	cos = zeros(6)
 	for i=1:sur_num
@@ -30,6 +30,6 @@ function aerodynamic_torque(sur_num, C_d, rho, v, e_r, e_a, p_c)
 			global tor += a[i]*cos[i]*cross(pc, e_r)
 		end
 		aer_tor = -(1/2)*C_d*rho*v*v*tor
-		
+
 	return aer_tor
 end
