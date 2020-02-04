@@ -1,42 +1,43 @@
 include("aerodynamic_torque.jl")
 include("magnetic_torque.jl")
 
-using SatelliteToolbox
-
-#=
-設定パラメータ
-=#
-C_d = 1 #衛星のサーフェースの抵抗係数
-sur_num = 6 #衛星の面数
-p_c = [150 0 0; -150 0 0; 0 150 0; 0 -150 0; 0 0 150; 0 0 -150] #各面の圧力中心
-e_a = [1 0 0; -1 0 0; 0 1 0; 0 -1 0; 0 0 1; 0 0 -1] #各面の法線ベクトル
-a = [90000, 90000, 90000, 90000, 90000, 90000] #衛星の各面積
-
-#引数候補
+using LinearAlgebra
+#=引数候補
 i_m = [1, 1, 1]
 B = [1, 1, 1]
 rho = 1
 v = 1
-e_r = [1, 0, 0] 
+e_r = [1, 0, 0]
+=#
 """
-torque, ??? = internal_model(current_time, x_ecef, v_ecef, x_geod, ...)
+torque = internal_model(i_m, B, rho, v, e_r)
 
 # Argments
-- ''：
-- ''：
-- ''：
-- ''：
-- ''：
+- 'i_m'：各磁気トルカに流れる電流
+- 'B'：磁束密度ベクトル＠SCSF
+- 'rho'：大気密度
+- 'v'：大気に対する衛星の速度
+- 'e_r'：衛星の進行方向の単位ベクトル@SCSF（body）
 - ''：
 
-# Returns
+# Return
 - 'torqe'：衛星にかかるトルク@SCSF
-- '???'：
 """
-function internal_model(current_time, x_ecef, v_ecef, x_geod)
+function internal_model(i_m, B, rho, v, e_r)
+	#=
+	設定パラメータ
+	=#
+	C_d = 1 #衛星のサーフェースの抵抗係数
+	sur_num = 6 #衛星の面数
+	p_c = [150 0 0; -150 0 0; 0 150 0; 0 -150 0; 0 0 150; 0 0 -150] #各面の圧力中心
+	e_a = [1 0 0; -1 0 0; 0 1 0; 0 -1 0; 0 0 1; 0 0 -1] #各面の法線ベクトル
+	a = [90000, 90000, 90000, 90000, 90000, 90000] #衛星の各面積
 	torque = zeros(3)
+
+	#トルク計算
 	aer_tor = aerodynamic_torque(C_d, rho, v, a, e_r, e_a, p_c)
 	mag_tor = magnetic_torque(i_m, B)
 	torque = aer_tor + mag_tor
+	
 	return torque
 end
