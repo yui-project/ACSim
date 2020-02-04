@@ -13,7 +13,7 @@ using Dates
 設定パラメータ
 =#
 DataNum =1000 #シミュレータ反復回数
-dt = 5 ##シミュレータの計算間隔 [s]
+dt = 5 #シミュレータの計算間隔 [s]
 start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
 TLEFileName = "./orbit/ISS_TLE.txt"
 
@@ -24,6 +24,9 @@ JD_log, x_ecef_log, v_ecef_log, x_geod_log = orbit_cal(DataNum,dt,start_time,TLE
 mag_vecs = zeros(DataNum,3)
 sun_vecs = zeros(DataNum,3)
 atoms_denses = zeros(DataNum)
+
+# 衛星内環境モデル用変数
+torqe = zeros(DataNum,3)
 
 for i=1:DataNum
 
