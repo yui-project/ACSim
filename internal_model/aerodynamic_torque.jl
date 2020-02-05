@@ -27,9 +27,10 @@ function aerodynamic_torque(sur_num, C_d, rho, v, a, e_r, e_a, p_c)
 		cos[i] = dot(e_r, ea)
 		if cos[i]>0.0
 			pc = p_c[i,:]
-			global tor += a[i]*cos[i]*cross(pc, e_r)
+			tor += a[i]*cos[i]*cross(pc, e_r)
 		end
-		aer_tor = -(1/2)*C_d*rho*v*v*tor
+	end
+	aer_tor = -(1/2)*C_d*rho*v*v*tor
 
 	return aer_tor
 end

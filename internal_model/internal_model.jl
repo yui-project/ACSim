@@ -35,7 +35,7 @@ function internal_model(i_m, B, rho, v, e_r)
 	torque = zeros(3)
 
 	#トルク計算
-	aer_tor = aerodynamic_torque(C_d, rho, v, a, e_r, e_a, p_c)
+	aer_tor = aerodynamic_torque(sur_num, C_d, rho, v, a, e_r, e_a, p_c)
 	mag_tor = magnetic_torque(i_m, B)
 	torque = aer_tor + mag_tor
 	

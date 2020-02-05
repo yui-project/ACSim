@@ -16,19 +16,19 @@ function magnetic_torque(i_m, B)
     n = 1 #the number of turns
     S = 1 #section area
 	m_r = [1,1,1] #残留磁気モーメント
-	m = zeros(4)
+	m = zeros(4,3)
 	T = zeros(4,3)
 	mag_tor = zeros(3)
 
 	#磁気モーメント計算
-    m[1] = μ*n*S*i_m[1]*[1,0,0]
-    m[2] = μ*n*S*i_m[2]*[0,1,0]
-	m[3] = μ*n*S*i_m[3]*[0,0,1]
-	m[4] = m_r
+    m[1,:] = μ*n*S*i_m[1]*[1,0,0]
+    m[2,:] = μ*n*S*i_m[2]*[0,1,0]
+	m[3,:] = μ*n*S*i_m[3]*[0,0,1]
+	m[4,:] = m_r
 
 	#各軸周りのトルク計算
 	for i=1:4
-		T[i,:] = cross(m[i], B)
+		T[i,:] = cross(m[i,:], B)
 	end
 
 	#全トルク計算
