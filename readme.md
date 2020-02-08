@@ -10,8 +10,8 @@
 ```
 main.jl
   |- orbit
-  |- static_model
-  |- dynamic_mode
+  |- external_model
+  |- internal_mode
   |- dynamics
   |- stellite
 ```
