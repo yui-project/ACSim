@@ -1,7 +1,7 @@
 #using SatelliteToolbox # main.jlにてincludeしているため不要
 
 #事前準備関数定義
-function set_SPCal(Name, t0)
+function set_SPCal(Name, t0,dt)
     tles = read_tle(Name) #TLE読み込み
     #println("readTLE_Complete")
     orbp = init_orbit_propagator(Val{:sgp4}, tles[1]) #SGP4での軌道モデルの読み込み 
@@ -32,7 +32,7 @@ function orbit_cal(DataNum,dt,start_time,TLEFileName,with_print=false)
 	v_ecef_log = zeros(DataNum, 3)    #衛星速度＠地心直交座標系
 
 	#シミュレーションループ
-	orbp, eop_IAU2000A, o, r, v = set_SPCal(TLEFileName, t0)
+	orbp, eop_IAU2000A, o, r, v = set_SPCal(TLEFileName, t0,dt)
 
 	for i=1:DataNum
 		JD_log[i] = DatetoJD(start_time + Second(i * dt))
