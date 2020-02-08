@@ -1,3 +1,6 @@
+# 概要
+筑波大学「結」プロジェクトが開発中の次世代CubeSat "ITF-3"のための姿勢制御シミュレーターです。
+ 
  # 構造について
 - main.jlが全てを呼び出す
     - モジュール内では、orbit.jl、 static_model.jl、dynamic_model.jl、dynamics.jl、satellite.jlが全てを呼び出す。
