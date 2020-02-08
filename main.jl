@@ -19,9 +19,6 @@ function main()
 	start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
 
-	# 軌道計算については先に行い、全時間分を配列に保存する
-	JD_log, x_ecef_log, v_ecef_log, x_geod_log = orbit_cal(DataNum,dt,start_time,TLEFileName)
-
 	# 進行方向とSCOFx軸とのずれ（内積）
 	dotvs = zeros(DataNum)
 
@@ -32,6 +29,8 @@ function main()
 	mag_vecs = zeros(DataNum,3)
 	sun_vecs = zeros(DataNum,3)
 	atoms_denses = zeros(DataNum)
+  # 衛星内環境モデル用変数
+  torqe = zeros(DataNum,3)
 
 	for i=1:DataNum
 
