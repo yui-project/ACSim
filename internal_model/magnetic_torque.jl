@@ -1,6 +1,7 @@
 using LinearAlgebra  
 """
 mag_tor = magneric_torque(i_m, B)
+
 磁気トルカによるトルクを計算
 
 # Arguments
