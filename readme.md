@@ -1,3 +1,6 @@
+# 概要
+筑波大学「結」プロジェクトが開発中の次世代CubeSat "ITF-3"のための姿勢制御シミュレーターです。
+ 
  # 構造について
 - main.jlが全てを呼び出す
     - モジュール内では、orbit.jl、 static_model.jl、dynamic_model.jl、dynamics.jl、satellite.jlが全てを呼び出す。
@@ -10,8 +13,8 @@
 ```
 main.jl
   |- orbit
-  |- static_model
-  |- dynamic_mode
+  |- external_model
+  |- internal_mode
   |- dynamics
   |- stellite
 ```
@@ -33,6 +36,8 @@ Earth-Centered Inertial。[Geocentric equatorial coordinates](https://en.wikiped
 進行方向をx軸、地球中心をz軸とする座標系。
 1. 衛星座標系(SCSF?)
 英語では、[Satellite Coordinates](https://gssc.esa.int/navipedia/index.php/Satellite_Coordinates)と書かれる。←ほんまか？
+1. geodetic座標系(geodetic)
+衛星の位置を緯度,経度,高度で表す座標系。主にECEF→geodeticで衛星の高度を求める。
 
 # コーディング規約について
 - コーディング規約[PEP8](https://qiita.com/simonritchie/items/bb06a7521ae6560738a7#命名規則)に則る。と思ってたが、ファイル名命名規則だけ変更！
@@ -65,6 +70,10 @@ function static_model(datetime,r_ecef)
     return mag_vel, sun_vec, atoms_dens
 end
 ```
+
+# test.jlについて
+軌道計算には、軌道モデルのダウンロードが必要であるため、オンラインである必要があります。
+test.jlは、計算済みの軌道データが格納されたHDF5ファイルを読み込んでおり軌道計算は行わないので、オフラインで実行可能です。また、ちょっと早いです。
 
 
 # メモ

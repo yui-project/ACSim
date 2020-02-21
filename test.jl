@@ -1,9 +1,9 @@
-include("orbit/orbit.jl")
+#include("orbit/orbit.jl")
 include("external_model/external_model.jl")
 #include("dynamic_model/dynamic_model.jl")
 #include("dynamics/dynamics.jl")
 #include("satellite/satellite.jl")
-include("graph_plot.jl")
+#include("graph_plot.jl")
 include("coordinates.jl")
 
 using SatelliteToolbox
@@ -25,14 +25,11 @@ function main()
 	dotvs = zeros(DataNum)
 
 	# 軌道計算については先に行い、全  時間分を配列に保存する
-	JD_log, x_ecef_log, v_ecef_log, x_geod_log = orbit_cal(DataNum,dt,start_time,TLEFileName)
-
-	h5open("orbit.h5", "w") do file
-		write(file, "JD_log", JD_log)  # alternatively, say "@write file A"
-		write(file, "x_ecef_log", x_ecef_log)
-		write(file, "v_ecef_log", v_ecef_log)
-		write(file, "x_geod_log", x_geod_log)
-	end
+	# JD_log, x_ecef_log, v_ecef_log, x_geod_log = orbit_cal(DataNum,dt,start_time,TLEFileName)
+	JD_log = h5read("orbit.h5", "JD_log")
+	x_ecef_log = h5read("orbit.h5", "x_ecef_log")
+	v_ecef_log = h5read("orbit.h5", "v_ecef_log")
+	x_geod_log = h5read("orbit.h5", "x_geod_log")
 
 
 	# SCOF上での衛星の進行方向
@@ -75,23 +72,18 @@ function main()
 
 	end
 
-	if plot == true
-		plot_2scalar(JD_log,dotvs,"dotvs")
-		plot_vec(direct_on_SCOFs,"direct_on_SCOFs")
-		
-		plot_2scalar(JD_log,atoms_denses,"atoms_dens")
-		plot_2scalar(JD_log,x_geod_log[:,3],"height")
-		plot_vec(mag_vecs,"mag_vec")
-		plot_vec(sun_vecs,"sun_vec")
-		plot_vec(x_ecef_log,"x_ecef_log")
-		plot_vec(v_ecef_log,"v_ecef_log")
-		plot_vec(x_geod_log,"x_geod_log")
-		plot_2scalar(x_geod_log[:,2],x_geod_log[:,1],"x_geod_log_2d")
-	end
-
 	
-
-
+	#plot_2scalar(JD_log,dotvs,"dotvs")
+	#plot_vec(direct_on_SCOFs,"direct_on_SCOFs")
+	#
+	#plot_2scalar(JD_log,atoms_denses,"atoms_dens")
+	#plot_2scalar(JD_log,x_geod_log[:,3],"height")
+	#plot_vec(mag_vecs,"mag_vec")
+	#plot_vec(sun_vecs,"sun_vec")
+	#plot_vec(x_ecef_log,"x_ecef_log")
+	#plot_vec(v_ecef_log,"v_ecef_log")
+	#plot_vec(x_geod_log,"x_geod_log")
+	#plot_2scalar(x_geod_log[:,2],x_geod_log[:,1],"x_geod_log_2d")
 	
 end
 

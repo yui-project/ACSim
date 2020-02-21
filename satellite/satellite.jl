@@ -9,3 +9,8 @@ end
 function attitude_control()
     
 end
+
+
+function satellite()
+	
+end
