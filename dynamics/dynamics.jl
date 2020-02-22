@@ -5,6 +5,6 @@ include("RungeKutta.jl")
 function dynamics(q::Quaternion,ω::Vector,T::Vector,I::Matrix,dt)
     qk=RK4((q,ω),dt)
     ωk=RK4((ω,T,I),dt) 
-    qk/norm(qk),ωk
+    return qk/norm(qk),ωk
 end
 
