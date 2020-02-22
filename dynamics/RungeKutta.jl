@@ -5,7 +5,7 @@ Runge-Kutta法で刻み時間`dt`秒後のFの値を計算する関数
 ## Arguments
 - `F::Any`: 計算したい時間の関数Fの`t`秒時点の値 関数`dif`で微分値を求められるもの
 - `dt::`  :刻み時間
-## Example
+## Returns
 - `dt`秒後のFの値
 """
 function RK4(F,dt)
