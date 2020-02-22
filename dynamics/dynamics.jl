@@ -3,6 +3,8 @@ include("differencial.jl")
 include("RungeKutta.jl")
 
 function dynamics(q::Quaternion,ω::Vector,T::Vector,I::Matrix,dt)
-    RK4((q,ω),dt),RK4((ω,T,I),dt)
+    dotq=RK4((q,ω),dt)
+    dotω=RK4((ω,T,I),dt) 
+    dotq/norm(dotq),dotω
 end
 
