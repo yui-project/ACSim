@@ -3,7 +3,8 @@ include("external_model/external_model.jl")
 #include("dynamic_model/dynamic_model.jl")
 #include("dynamics/dynamics.jl")
 #include("satellite/satellite.jl")
-#include("graph_plot.jl")
+#include("plot/plot_plots.jl")
+include("plot/plot_makie.jl")
 include("coordinates.jl")
 
 using SatelliteToolbox
@@ -20,16 +21,15 @@ function main()
 	dt = 5 ##シミュレータの計算間隔 [s]
 	start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
-
 	# 進行方向とSCOFx軸とのずれ（内積）
 	dotvs = zeros(DataNum)
 
-	# 軌道計算については先に行い、全  時間分を配列に保存する
+	# 軌道計算については先に行い、全時間分を配列に保存する
 	# JD_log, x_ecef_log, v_ecef_log, x_geod_log = orbit_cal(DataNum,dt,start_time,TLEFileName)
-	JD_log = h5read("orbit.h5", "JD_log")
-	x_ecef_log = h5read("orbit.h5", "x_ecef_log")
-	v_ecef_log = h5read("orbit.h5", "v_ecef_log")
-	x_geod_log = h5read("orbit.h5", "x_geod_log")
+	JD_log = h5read("./orbit/orbit_data.h5", "JD_log")
+	x_ecef_log = h5read("./orbit/orbit_data.h5", "x_ecef_log")
+	v_ecef_log = h5read("./orbit/orbit_data.h5", "v_ecef_log")
+	x_geod_log = h5read("./orbit/orbit_data.h5", "x_geod_log")
 
 
 	# SCOF上での衛星の進行方向
@@ -42,6 +42,10 @@ function main()
 
   	# 衛星内環境モデル用変数
   	torqe = zeros(DataNum,3)
+
+
+	# plot_makie
+	mp_earth()
 
 	for i=1:DataNum
 
@@ -68,7 +72,8 @@ function main()
 
 		direct_on_SCOFs[i,:] = ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true) * v_ecef_log[i,:]
 
-
+		mp_r(x_ecef_log[i,:])		
+		sleep(1/24)
 
 	end
 

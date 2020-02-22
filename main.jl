@@ -3,7 +3,8 @@ include("external_model/external_model.jl")
 #include("dynamic_model/dynamic_model.jl")
 #include("dynamics/dynamics.jl")
 #include("satellite/satellite.jl")
-include("graph_plot.jl")
+include("plot/plot_plots.jl")
+#include("plot/plot_makie.jl")
 include("coordinates.jl")
 
 using SatelliteToolbox
