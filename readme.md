@@ -18,6 +18,7 @@
  # 構造について
 - main.jlが全てを呼び出す
     - モジュール内では、orbit.jl、 static_model.jl、dynamic_model.jl、dynamics.jl、satellite.jlが全てを呼び出す。
+- main_light.jl は、計算済みの軌道情報を格納してあるHDF5ファイルを呼び出して実行
 - 衛星の状態を次のあらゆるパラメータは、常にmain.jlが保持する
     - 時刻
     - 衛星の位置、速度、角速度、（加速度）
