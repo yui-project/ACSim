@@ -26,3 +26,9 @@ end
 function dif((ω,T,I)::Tuple{Vector,Vector,Matrix})
     (T-cross(ω,(I*ω)))*inv(I)
 end
+
+function dif((q,ω)::Tuple{Quaternion,Vector},(T,I)::Tuple{Vector,Matrix})
+    dq = 0.5q*ω
+    dω = (T-cross(ω,(I*ω)))*inv(I)
+    return (dq,dω)
+end
