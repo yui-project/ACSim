@@ -22,3 +22,7 @@ function dynamics(q::Quaternion,ω::Vector,T::Vector,I::Matrix,dt::Number)
     return qk/norm(qk),ωk
 end
 
+function dynamics(q::Quaternion,ω::Vector,T::Vector,I::Matrix,dt::Number)
+    qk,ωk=RK4((q,ω),(T,I),dt) 
+    return qk/norm(qk),ωk
+end
