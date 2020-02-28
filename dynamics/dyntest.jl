@@ -32,7 +32,7 @@ function energy(q::Quaternion,ω::Vector,(r0,m,g)::Tuple{Vector,Number,Vector})
     r=vect(q*r0*conj(q))
     v=cross(r,ω)
     f=m*g
-    E=0.5m*dot(v,v)+0.5dot(ω,[Ix 0 0;0 Ix 0;0 0 Ix]*ω)-dot(r,f)
+    E=0.5m*dot(v,v)+0.5dot(ω,[Ix 0 0;0 Ix 0;0 0 Ix]*ω),-dot(r,f)
     return E
 end
 
@@ -48,7 +48,6 @@ for i in 2:len
     q,ω=(a[i-1][1],a[i-1][2])
     T=torque(q,(r0,m,g))
     q,ω=dynamics(q,ω,T,I,dt)
-    q=q/norm(q)
     E=energy(q,ω,(r0,m,g))
     push!(a,(q,ω,E))
 end
