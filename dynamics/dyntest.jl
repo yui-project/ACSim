@@ -23,13 +23,14 @@ I=
 #トルクを求める関数
 function torque(q::Quaternion,(r0,m,g)::Tuple{Vector,Number,Vector})
     r=vect(q*r0*conj(q))
-    T= cross(r,m*g)
-    return T
+    T= conj(q)*cross(r,m*g)*q
+    return [T.q1,T.q2,T.q3]
 end
 
 #力学的エネルギーを求める関数
 function energy(q::Quaternion,ω::Vector,(r0,m,g)::Tuple{Vector,Number,Vector})
     r=vect(q*r0*conj(q))
+    ω=vect(conj(q)*ω*q)
     v=cross(r,ω)
     f=m*g
     E=0.5m*dot(v,v)+0.5dot(ω,[Ix 0 0;0 Ix 0;0 0 Ix]*ω),-dot(r,f)
@@ -38,7 +39,7 @@ end
 
 #振り子のシミュレーション
 q=Quaternion(1.0,0.0,0.0,0.0)
-ω=[0.0,0.0,0.0]
+ω=[0.0,-0.05pi,0.05pi]
 E=energy(q,ω,(r0,m,g))
 a=[(q,ω,E)]
 
@@ -51,3 +52,18 @@ for i in 2:len
     E=energy(q,ω,(r0,m,g))
     push!(a,(q,ω,E))
 end
+
+#結果から一列取り出す関数
+function hndlres(a,len,k)
+    b=[a[1][k]]
+    for i in 2:len
+        push!(b,a[i][k])
+    end
+    return b
+end
+
+q=hndlres(a,len,1)
+ω=hndlres(a,len,2)
+Ek=hndlres(hndlres(a,len,3),len,1) #運動エネルギー
+Ep=hndlres(hndlres(a,len,3),len,2) #位置エネルギー
+;
