@@ -133,7 +133,7 @@ function pseudo_inverse(sat_tar, sat_att, kp, kr, ω, B)
 	B_mat = zeros(3,3)
 	B_mat = cross_matrix(B)
 	#B_matの擬似逆行列
-	B_pse = B'
+	B_pse = pinv(B)
 	#必要トルクを求める
 	t_req = lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
 	m = B_pse*t_req
