@@ -7,7 +7,7 @@ using LinearAlgebra
 
 
 """
-m = cross_matrix(v)
+matrix = cross_matrix(vector)
 
 2つのベクトルの外積cross(a, v)のvを行列化し、v*aで外積を計算できるようにする
 
@@ -42,7 +42,7 @@ t_req  = lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
  - `sat_att`：現在の衛星姿勢クォータニオン
  - `kp`：ポイントゲイン
  - `kr`：レートゲイン
- - `ω`：位置ベクトルの角速度
+ - `ω`：位置ベクトルの角速度（ベクトル）
 
 # Return
  - `t_req`：必要トルク
@@ -72,7 +72,7 @@ B-dot法により
 
 # Argments
  - `B`：地磁気ベクトル@ECEF
- - `ω`：位置ベクトルの角速度
+ - `ω`：位置ベクトルの角速度（ベクトル） 
  - `I`：慣性テンソル
 
 # Return
@@ -84,7 +84,7 @@ end
 
 
 """
-m = cross_product()
+m = cross_product(sat_tar, sat_att, kp, kr, ω, B)
 
 cross_product法により
 姿勢制御する際に必要な磁気モーメントを求める
@@ -94,7 +94,7 @@ cross_product法により
  - `sat_att`：現在の衛星姿勢クォータニオン
  - `kp`：ポイントゲイン
  - `kr`：レートゲイン
- - `ω`：位置ベクトルの角速度
+ - `ω`：位置ベクトルの角速度（ベクトル）
  - `B`：地磁気ベクトル@ECEF
 
 # Return
@@ -111,7 +111,7 @@ end
 
 
 """
-m = pseudo_inverse()
+m = pseudo_inverse(sat_tar, sat_att, kp, kr, ω, B)
 
 擬似逆行列により
 姿勢制御する際に必要な磁気モーメントを求める
@@ -121,7 +121,7 @@ m = pseudo_inverse()
  - `sat_att`：現在の衛星姿勢クォータニオン
  - `kp`：ポイントゲイン
  - `kr`：レートゲイン
- - `ω`：位置ベクトルの角速度
+ - `ω`：位置ベクトルの角速度（ベクトル）
  - `B`：地磁気ベクトル@ECEF
  - `ω`：位置ベクトルの角速度
 
@@ -133,10 +133,11 @@ function pseudo_inverse(sat_tar, sat_att, kp, kr, ω, B)
 	B_mat = zeros(3,3)
 	B_mat = cross_matrix(B)
 	#B_matの擬似逆行列
-	B_pse = pinv(B)
+	B_pse = pinv(B_mat)
 	#必要トルクを求める
 	t_req = lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
 	m = B_pse*t_req
+	return m
 end
 
 
@@ -148,7 +149,7 @@ out_cur = attitude_control()
 # Argments
  - `sat_att`：現在の衛星姿勢クォータニオン
  - `sat_tar`：目標姿勢クォータニオン
- - `ω`：位置ベクトルの角速度
+ - `ω`：位置ベクトルの角速度（ベクトル）
  - `I`：慣性テンソル
 
 # Return
