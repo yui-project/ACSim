@@ -21,12 +21,15 @@ sun_vol = sun_sensor(sun_vecs, sat_pos, sat_att)
  - `sun_energy`：太陽光エネルギー密度@大気圏外 [kW/m2]
  - `ss_xLength`：太陽センサの光検出部長さ（x方向）[mm]
  - `ss_yLength`：太陽センサの光検出部長さ（y方向）[mm]
+ - `ss_pointsensi`：太陽センサの光検出部位置分解能 [μm]
 """
 
 function sun_sensor(sun_vecs, ss_dir)
 	spot_height = 3.1
 	ss_xLength = 9.0
 	ss_yLength = 9.0
+	ss_pointsensi = 1.5
+	ssout_digits = 4
 	sun_pos = zeros(1,2)
 	sv_M = zeros(3,3)
 	
@@ -62,6 +65,9 @@ function sun_sensor(sun_vecs, ss_dir)
 		# 光がセンサ検出外の時、例外処理
 		if abs(sun_pos[1,1]) > ss_xLength || abs(sun_pos[1,2]) > ss_yLength
 			sun_pos = [0.0 0.0]
+		else
+			sun_pos = round.(sun_pos ./ (ss_pointsensi/1000)) .* (ss_pointsensi/1000)
+			sun_pos = round.(sun_pos, digits=ssout_digits)
 		end
 	end
 
@@ -82,32 +88,32 @@ mag_vol = mag_sensors(mag_vecs, sat_pos, sat_att)
  - `mag_sel`：地磁気ベクトルのシリアル出力(1*3) 
 
 # Conditions
- - `range` : オフセットの調整なしで測定可能なセンサ動作範囲
- - `sensi` : センサ分解能
- - `out_minvol` : 出力最小値における電圧(output=volの時のみ)
- - `out_maxvol` : 出力最大値における電圧(output=volの時のみ)
- - `digit_vol`：電圧出力時の有効桁数
- - `digit_i2c`：I2C出力時の有効桁数
+ - `ms_range` : オフセットの調整なしで測定可能なセンサ動作範囲
+ - `ms_sensi` : センサ分解能
+ - `msout_minvol` : 出力最小値における電圧(output=volの時のみ)
+ - `msout_maxvol` : 出力最大値における電圧(output=volの時のみ)
+ - `msout_digit_vol`：電圧出力時の有効桁数
+ - `msout_digit_i2c`：I2C出力時の有効桁数
  Conditions参考：BM1422AGMV
 """
 
 function mag_sensor(mag_vecs, output)
-	range = 300   # ± μT
-	sensi = 0.042 # μT/LSB
-	out_minvol = 0.0 # V
-	out_maxvol = 5.0 # V
-	digit_vol = 6
-	digit_i2c = 3
+	ms_range = 300   # ± μT
+	ms_sensi = 0.042 # μT/LSB
+	msout_minvol = 0.0 # V
+	msout_maxvol = 5.0 # V
+	msout_digit_vol = 6
+	msout_digit_i2c = 3
 
 	if output == "vol"
-		out_centvol = (out_maxvol-out_minvol)/2
-		mag_vol = round.(mag_vecs ./ sensi) .* (sensi *(out_centvol/2) / range) .+ out_centvol
-		mag_vol = round.(mag_vol, digits=digit_vol)
+		msout_centvol = (msout_maxvol-msout_minvol)/2
+		mag_vol = round.(mag_vecs ./ ms_sensi) .* (ms_sensi *(msout_centvol/2) / ms_range) .+ msout_centvol
+		mag_vol = round.(mag_vol, digits=msout_digit_vol)
 		return mag_vol
 
 	elseif output == "i2c"
-		mag_sel = round.(mag_vecs ./ sensi) .* sensi
-		mag_sel = round.(mag_sel, digits=digit_i2c)
+		mag_sel = round.(mag_vecs ./ ms_sensi) .* ms_sensi
+		mag_sel = round.(mag_sel, digits=msout_digit_i2c)
 		return mag_sel
 	end
 

@@ -7,6 +7,7 @@ mag_vols = mag_sensor(mag_vecs, "vol")
 println(mag_vols)
 
 """
-sun_vecs = [1.0 1.0 1.0]
+
+sun_vecs = [0.90 1.1111 0.383]
 sun_pos = sun_sensor(sun_vecs, "z-")
 println(sun_pos)
