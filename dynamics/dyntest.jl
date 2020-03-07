@@ -21,14 +21,14 @@ I=
 
 
 #トルクを求める関数
-function torque(q::Quaternion,(r0,m,g)::Tuple{Vector,Number,Vector})
+function torque(q::SatelliteToolbox.Quaternion,(r0,m,g)::Tuple{Vector,Number,Vector})
     r=vect(q*r0*conj(q))
     T= conj(q)*cross(r,m*g)*q
     return [T.q1,T.q2,T.q3]
 end
 
 #力学的エネルギーを求める関数
-function energy(q::Quaternion,ω::Vector,(r0,m,g)::Tuple{Vector,Number,Vector})
+function energy(q::SatelliteToolbox.Quaternion,ω::Vector,(r0,m,g)::Tuple{Vector,Number,Vector})
     r=vect(q*r0*conj(q))
     ω=vect(conj(q)*ω*q)
     v=cross(r,ω)
@@ -38,7 +38,7 @@ function energy(q::Quaternion,ω::Vector,(r0,m,g)::Tuple{Vector,Number,Vector})
 end
 
 #振り子のシミュレーション
-q=Quaternion(1.0,0.0,0.0,0.0)
+q=SatelliteToolbox.Quaternion(1.0,0.0,0.0,0.0)
 ω=[0.0,-0.05pi,0.05pi]
 E=energy(q,ω,(r0,m,g))
 result_all=[(q,ω,E)]
