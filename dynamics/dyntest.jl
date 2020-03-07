@@ -1,5 +1,4 @@
 include("dynamics.jl")
-include("../plot/plot_makie.jl")
 using ReferenceFrameRotations
 #dynamics.jlのテスト
 #クォータニオンとRK法による回転運動のシミュレーションのテスト(振り子)
