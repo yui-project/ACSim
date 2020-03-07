@@ -1,3 +1,6 @@
+include("attitude_determination.jl")
+include("attitude_control.jl")
+
 using Dates
 using LinearAlgebra
 using Quaternions
@@ -19,22 +22,6 @@ function attitude_determination()
     
 end
 
-"""
-out_cur = attitude_control()
-
-目標姿勢までPID制御する
-
-# Argments
- - `sat_att`：現在の衛星姿勢クォータニオン
- - `sat_tar`：目標姿勢クォータニオン
- - `ω`：位置ベクトルの角速度
-
-# Return
-- `out_cur`：加える電流値
-"""
-function attitude_control()
-    
-end
 
 """
 sat_pos, sat_att, out_cur = satellite()

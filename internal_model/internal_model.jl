@@ -1,6 +1,6 @@
 include("aerodynamic_torque.jl")
 include("magnetic_torque.jl")
-include("sensor.jl")
+include("sensors.jl")
 
 using LinearAlgebra
 #=引数候補
@@ -43,8 +43,8 @@ function internal_model(i_m, B, rho, v, e_r)
 	torque = aer_tor + mag_tor
 
 	#センサ出力
-	sun_vol = sun_sensor(sun_vecs, sat_pos, sat_att)
-	mag_vol = mag_sensor(mag_vecs, sat_pos, sat_att)
+	sun_vol = sun_sensor(sun_vecs, "z-")
+	mag_vol = mag_sensor(mag_vecs, "vol")
 	
 	return torque, sun_vol, mag_vol
 end
