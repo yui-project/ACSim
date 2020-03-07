@@ -13,9 +13,9 @@ mag_tor = magneric_torque(i_m, B)
 
 """
 function magnetic_torque(i_m, B)
-    μ = 1 #magnetic permeability
-    n = 1 #the number of turns
-    S = 1 #section area
+    μ = 1 #透磁率
+    n = 1 #巻き数
+    S = 1 #有効断面積
 	m_r = [1,1,1] #残留磁気モーメント
 	m = zeros(4,3)
 	T = zeros(4,3)
