@@ -24,7 +24,7 @@ function torque((q,ω)::Tuple{SatelliteToolbox.Quaternion,Vector},(r0,m,g)::Tupl
     r=vect(q*r0*conj(q))
     v=cross(ω,r)
     f=m*g+m*cross(v,ω)
-    T= conj(q)*cross(f,r)*q
+    T= conj(q)*cross(r,f)*q
     return [T.q1,T.q2,T.q3]
 end
 
@@ -40,11 +40,11 @@ end
 
 #振り子のシミュレーション
 q=SatelliteToolbox.Quaternion(1.0,0.0,0.0,0.0)
-ω=[0.0,0.0,0.0]
+ω=[0.0,-0.005pi,0.05pi]
 E=energy(q,ω,(r0,m,g))
 result_all=[(q,ω,E)]
 
-len=5000
+len=500000
 dt=0.01
 for i in 2:len
     q,ω=(result_all[i-1][1],result_all[i-1][2])
