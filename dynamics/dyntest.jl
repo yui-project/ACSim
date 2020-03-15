@@ -20,9 +20,11 @@ I=
 
 
 #トルクを求める関数
-function torque(q::SatelliteToolbox.Quaternion,(r0,m,g)::Tuple{Vector,Number,Vector})
+function torque((q,ω)::Tuple{SatelliteToolbox.Quaternion,Vector},(r0,m,g)::Tuple{Vector,Number,Vector})
     r=vect(q*r0*conj(q))
-    T= conj(q)*cross(r,m*g)*q
+    v=cross(ω,r)
+    f=m*g+m*cross(v,ω)
+    T= conj(q)*cross(f,r)*q
     return [T.q1,T.q2,T.q3]
 end
 
@@ -30,15 +32,15 @@ end
 function energy(q::SatelliteToolbox.Quaternion,ω::Vector,(r0,m,g)::Tuple{Vector,Number,Vector})
     r=vect(q*r0*conj(q))
     ω=vect(conj(q)*ω*q)
-    v=cross(r,ω)
-    f=m*g
-    E=0.5m*dot(v,v)+0.5dot(ω,[Ix 0 0;0 Ix 0;0 0 Ix]*ω),-dot(r,f)
+    v=cross(ω,r)
+    fg=m*g
+    E=0.5m*dot(v,v)+0.5dot(ω,[Ix 0 0;0 Ix 0;0 0 Ix]*ω),-dot(r,fg)
     return E
 end
 
 #振り子のシミュレーション
 q=SatelliteToolbox.Quaternion(1.0,0.0,0.0,0.0)
-ω=[0.0,-0.05pi,0.05pi]
+ω=[0.0,0.0,0.0]
 E=energy(q,ω,(r0,m,g))
 result_all=[(q,ω,E)]
 
@@ -46,7 +48,7 @@ len=5000
 dt=0.01
 for i in 2:len
     q,ω=(result_all[i-1][1],result_all[i-1][2])
-    T=torque(q,(r0,m,g))
+    T=torque((q,ω),(r0,m,g))
     q,ω=dynamics(q,ω,T,I,dt)
     E=energy(q,ω,(r0,m,g))
     push!(result_all,(q,ω,E))
