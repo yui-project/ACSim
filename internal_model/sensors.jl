@@ -181,6 +181,8 @@ end
 gyro = gyro_calcurate(qua1, qua2, dt)
 
 状態1から状態2に一定速度で回転して変化する時の角速度ベクトルを求める
+但し、dtのうちに ±180deg以上回転する場合は±180degに収まる値に変換される（+200deg -> -160deg, +380deg -> +20deg）
+(±180deg以上/以下の判定が出来ていないため)
 
 # Argments
  - `qua1`：状態1（変化前）の衛星姿勢を示すクォータニオン
@@ -204,18 +206,20 @@ function gyro_calcurate(qua1, qua2, dt)
 
 	# cq_ecefをオイラー軸/オイラー角に分離、オイラー軸をBody座標系に変換してから再結合、ついでにcqの時間微分（オイラー角/dt）を求める
 	θ = acos(cq_ecef.q0)
-	n = [cq_ecef.q1 / sin(θ); cq_ecef.q2 / sin(θ); cq_ecef.q3 / sin(θ)]
-	dθ = θ/dt
-	axe = qua2 * n / qua2
-	dq = SatelliteToolbox.Quaternion(cos(dθ), axe.q1*sin(dθ), axe.q2*sin(dθ), axe.q3*sin(dθ))
-	cq_body = SatelliteToolbox.Quaternion(cos(θ), axe.q1*sin(θ), axe.q2*sin(θ), axe.q3*sin(θ))
-	
-	# dq と角速度ベクトルの関係式より、角速度ベクトルを求める
-	omega = 2* cq_body \ dq
+	if sin(θ) != 0.0  # 例外処理：sinθ=0であればqua1=qua2 => 回転していない =>　ω=[0., 0., 0.]
+		n = [cq_ecef.q1 / sin(θ); cq_ecef.q2 / sin(θ); cq_ecef.q3 / sin(θ)]
+		dθ = θ/dt
+		axe = qua2 * n / qua2
+		dq = SatelliteToolbox.Quaternion(cos(dθ), axe.q1*sin(dθ), axe.q2*sin(dθ), axe.q3*sin(dθ))
+		cq_body = SatelliteToolbox.Quaternion(cos(θ), axe.q1*sin(θ), axe.q2*sin(θ), axe.q3*sin(θ))
+		
+		# dq と角速度ベクトルの関係式より、角速度ベクトルを求める
+		omega = 2* cq_body \ dq
 
-	ω[1] = omega.q1
-	ω[2] = omega.q2
-	ω[3] = omega.q3
+		ω[1] = omega.q1
+		ω[2] = omega.q2
+		ω[3] = omega.q3
+	end
 
 	return ω
 end
