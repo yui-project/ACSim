@@ -78,10 +78,10 @@ function sun_sensor(sun_vecs, ss_dir)
 			a = sqrt(SUN_ENE_DENCE * π * (SPOT_DIA/2/1000)^2 / SS_RESIST)
 			b = 2*sun_pos[1,1] / SS_XLENGTH
 			c = 2*sun_pos[1,2] / SS_YLENGTH
-			if 1-c < 1-b
-				ss_out[1] = a/2 - a*b/2 - a*c
+			if b < c
+				ss_out[1] = a/4 - a*b/4 - a*c/2
 			else
-				ss_out[1] = a/2 - a*b - a*c/2
+				ss_out[1] = a/4 - a*b/2 - a*c/4
 			end
 			if ss_out[1] < 0
 				ss_out[1] = 0.0
