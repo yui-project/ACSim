@@ -16,7 +16,7 @@ external_model(current_time,r_ecef, r_geod, cal_year=2020)
 
 # Returns
 - `sun_vec`: 太陽方向ベクトル@
-- `mag_vec`: 地磁場方向ベクトル@Geodetic
+- `mag_vec_ecef`: 地磁場方向ベクトル@ECEF
 - `atoms_dens`: 大気密度スカラー@
 
 """
