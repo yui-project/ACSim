@@ -64,7 +64,7 @@ function main()
 		# 衛星外環境モデル計算
 		mag_vec, sun_vec, atoms_dens = external_model(current_time,x_ecef_log[i,:],x_geod_log[i,:])
 		println("         mag_vec:",mag_vec)
-		mag_vecs[i,:] = ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true)*mag_vec
+		mag_vecs[i,:] = mag_vec
 		println("         sun_vec:",sun_vec)
 		sun_vecs[i,:] = sun_vec
 		println("      atoms_dens:",atoms_dens)
