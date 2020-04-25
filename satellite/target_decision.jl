@@ -94,12 +94,8 @@ shootingtime = shootingtime_decision2(satplace_plans, targetplace, currenttime, 
  - `cam_viewangle`：カメラの視野角 [deg]
  - `sat_axisval`：衛星のポインティング時回転角度限界 [deg]
 # Return
-- `shootingtime`：撮影時刻
+- `shootingtime`：撮影時刻(呼び出し元でのループ回数)
 - `shooting_vec`：撮影時衛星->撮影地点方向ベクトル@ECEF
-
-# Conditions
- - `cam_viewangle`：カメラの視野角 [deg]
- - `sat_axisval`:衛星の撮影時姿勢の可動域 [deg]
 """
 
 function shootingtime_decision2(satplace_plans, targetplace, currenttime, limit_time,cam_viewangle, sat_axisval)
@@ -109,7 +105,7 @@ function shootingtime_decision2(satplace_plans, targetplace, currenttime, limit_
     satplace_geod = ECEFtoGeodetic(satplace_plans[1, :])
     targetplace_geod = ECEFtoGeodetic(targetplace)
     mindistance = sqrt((satplace_geod[1]-targetplace[1])^2+(satplace_geod[2]-targetplace[2])^2)
-
+    
     # 衛星が撮影地点に最も近くなる時間を検索
     for i = 2:limit_time
         satplace_geod = ECEFtoGeodetic(satplace_plans[i, :])
@@ -127,9 +123,13 @@ function shootingtime_decision2(satplace_plans, targetplace, currenttime, limit_
 
     shooting_vec = targetplace - satplace_plans[shootingtime, :]
     shooting_vec = shooting_vec / norm(shooting_vec)
+    print("shooting_vec : ")
+    println(shooting_vec)
+    print("satplace : ")
+    println(satplace_plans[shootingtime, :])
     cθ = dot(shooting_vec, -satplace_plans[shootingtime, :])
     cθ = cθ / (norm(shooting_vec) * norm(satplace_plans[shootingtime, :]))
-
+    
     if cθ < cθ_lim
         shooting_vec = [0., 0., 0.]
         shootingtime = 1
@@ -137,6 +137,15 @@ function shootingtime_decision2(satplace_plans, targetplace, currenttime, limit_
         shootingtime = shootingtime + currenttime -1
     end
 
+    r = sqrt(shooting_vec[1]^2+shooting_vec[2]^2)
+    tφ = r/shooting_vec[3]
+    if tφ > tand(sat_axisval)
+        shooting_vec[1] = shooting_vec[1] * shooting_vec[3] * tand(sat_axisval) / r
+        shooting_vec[2] = shooting_vec[2] * shooting_vec[3] * tand(sat_axisval) / r
+
+        shooting_vec = shooting_vec / norm(shooting_vec)
+    end
+    
     return shootingtime, shooting_vec
 end
 
