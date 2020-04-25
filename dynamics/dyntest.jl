@@ -1,5 +1,4 @@
 include("dynamics.jl")
-using Plots
 using ReferenceFrameRotations
 #dynamics.jlのテスト
 #クォータニオンとRK法による回転運動のシミュレーションのテスト(振り子)
@@ -21,33 +20,51 @@ I=
 
 
 #トルクを求める関数
-function torque(q::Quaternion,(r0,m,g)::Tuple{Vector,Number,Vector})
+function torque((q,ω)::Tuple{SatelliteToolbox.Quaternion,Vector},(r0,m,g)::Tuple{Vector,Number,Vector})
     r=vect(q*r0*conj(q))
-    T= cross(r,m*g)
-    return T
+    v=cross(ω,r)
+    f=m*g+m*cross(v,ω)
+    T= conj(q)*cross(r,f)*q
+    return [T.q1,T.q2,T.q3]
 end
 
 #力学的エネルギーを求める関数
-function energy(q::Quaternion,ω::Vector,(r0,m,g)::Tuple{Vector,Number,Vector})
+function energy(q::SatelliteToolbox.Quaternion,ω::Vector,(r0,m,g)::Tuple{Vector,Number,Vector})
     r=vect(q*r0*conj(q))
-    v=cross(r,ω)
-    f=m*g
-    E=0.5m*dot(v,v)+0.5dot(ω,[Ix 0 0;0 Ix 0;0 0 Ix]*ω),-dot(r,f)
+    ω=vect(conj(q)*ω*q)
+    v=cross(ω,r)
+    fg=m*g
+    E=0.5m*dot(v,v)+0.5dot(ω,[Ix 0 0;0 Ix 0;0 0 Ix]*ω),-dot(r,fg)
     return E
 end
 
 #振り子のシミュレーション
-q=Quaternion(1.0,0.0,0.0,0.0)
-ω=[0.0,0.0,0.0]
+q=SatelliteToolbox.Quaternion(1.0,0.0,0.0,0.0)
+ω=[0.0,-0.005pi,0.05pi]
 E=energy(q,ω,(r0,m,g))
-a=[(q,ω,E)]
+result_all=[(q,ω,E)]
 
-len=1000
+len=500000
 dt=0.01
 for i in 2:len
-    q,ω=(a[i-1][1],a[i-1][2])
-    T=torque(q,(r0,m,g))
+    q,ω=(result_all[i-1][1],result_all[i-1][2])
+    T=torque((q,ω),(r0,m,g))
     q,ω=dynamics(q,ω,T,I,dt)
     E=energy(q,ω,(r0,m,g))
-    push!(a,(q,ω,E))
+    push!(result_all,(q,ω,E))
 end
+
+#結果から一列取り出す関数
+function handle_result(result,len,k)
+    b=[result[1][k]]
+    for i in 2:len
+        push!(b,result[i][k])
+    end
+    return b
+end
+
+q=handle_result(result_all,len,1)
+ω=handle_result(result_all,len,2)
+Ek=handle_result(handle_result(result_all,len,3),len,1) #運動エネルギー
+Ep=handle_result(handle_result(result_all,len,3),len,2) #位置エネルギー
+;
