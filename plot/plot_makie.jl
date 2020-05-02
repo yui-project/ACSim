@@ -8,7 +8,7 @@ makie plotの初期化
 
 """
 function mp_init()
-    scene = Secene()
+    scene = Scene()
 end
 
 
@@ -20,7 +20,7 @@ mp_earth(earth_radius=1)
 # Arguments
 - （earth_radius:地球の半径）
 """
-function mp_earth(earth_radius=1)
+function mp_earth(;earth_radius=1)
     earth = try
         load(download("https://svs.gsfc.nasa.gov/vis/a000000/a002900/a002915/bluemarble-2048.png"))
     catch e
@@ -48,12 +48,12 @@ function mp_basic_coordinate(myscene; r=[0,0,0],arrow_size=1)
 end
 
 
-function mp_r(myscene; r)
+function mp_r(myscene, r)
     arrows!(myscene, [0],[0],[0],r[1],r[2],r[3])
 end
 
-function mp_sat(r)
-    mp_basic_coordinate(myscene,[0,0,0])
+function mp_sat(myscene,r)
+    mp_basic_coordinate(myscene)
     arrows!(myscene,[0],[0],[0],[r[1]],[r[2]],[r[3]],normalize=true,linewidth=5,arrowsize=0.1)
 end
 

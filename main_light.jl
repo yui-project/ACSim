@@ -13,11 +13,12 @@ using LinearAlgebra
 
 using HDF5
 
+
 function main()
 	#=
 	設定パラメータ
 	=#
-	DataNum =1000 #シミュレータ反復回数
+	DataNum =100 #シミュレータ反復回数
 	dt = 5 ##シミュレータの計算間隔 [s]
 	start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
@@ -45,7 +46,7 @@ function main()
 
 
 	# plot_makie
-	mp_earth()
+	# mp_earth()
 
 	for i=1:DataNum
 
@@ -72,7 +73,9 @@ function main()
 
 		direct_on_SCOFs[i,:] = ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true) * v_ecef_log[i,:]
 
-		mp_r(x_ecef_log[i,:])		
+		
+		
+		#mp_sat(my_scene,x_ecef_log[i,:])		
 		sleep(1/24)
 
 	end
@@ -91,5 +94,8 @@ function main()
 	#plot_2scalar(x_geod_log[:,2],x_geod_log[:,1],"x_geod_log_2d")
 	
 end
+
+my_scene = Scene()
+mp_basic_coordinate(my_scene)
 
 main()
