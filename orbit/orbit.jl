@@ -10,7 +10,7 @@ function set_SPCal(Name, t0,dt)
     #println("EarthModelDownload_Complete")
     o, r, v = propagate_to_epoch!(orbp, t0 - dt/(24*60*60))
     #println("1stStepOrbitCalcurate_Complete")
-    return orbp, eop_IAU2000A, o, r, v 
+    return orbp, eop_IAU2000A, o, r, v, tles
 end
 
 #ループ毎処理関数定義
@@ -32,7 +32,7 @@ function orbit_cal(DataNum,dt,start_time,TLEFileName,with_print=false)
 	v_ecef_log = zeros(DataNum, 3)    #衛星速度＠地心直交座標系
 
 	#シミュレーションループ
-	orbp, eop_IAU2000A, o, r, v = set_SPCal(TLEFileName, t0,dt)
+	orbp, eop_IAU2000A, o, r, v, tles = set_SPCal(TLEFileName, t0,dt)
 
 	for i=1:DataNum
 		JD_log[i] = DatetoJD(start_time + Second(i * dt))
@@ -63,5 +63,5 @@ function orbit_cal(DataNum,dt,start_time,TLEFileName,with_print=false)
 		#println(x_geod_log[i,:])
 	end
 
-	return JD_log,x_ecef_log, v_ecef_log, x_geod_log
+	return JD_log,x_ecef_log, v_ecef_log, x_geod_log, tles
 end
