@@ -1,8 +1,4 @@
-include("../plot/plot_plots.jl")
-include("../plot/plot_makie.jl")
 
-using Dates
-using Quaternions
 using LinearAlgebra
 
 
@@ -51,15 +47,15 @@ function lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
 	q_e = zeros(3)
 	q = zeros(3)
 	q_t = zeros(3)
-	q[1] = sat_att.v1
-	q[2] = sat_att.v2
-	q[3] = sat_att.v3
-	q4 = sat_att.s
-	q_t[1] = sat_tar.v1
-	q_t[2] = sat_tar.v2
-	q_t[3] = sat_tar.v3
-	q4_t = sat_tar.s
-	q_e = - q4*q + q4*q_t - cross(q,q_t)
+	q0 = sat_att.q0
+	q[1] = sat_att.q1
+	q[2] = sat_att.q2
+	q[3] = sat_att.q3
+	q0_t = sat_tar.q0
+	q_t[1] = sat_tar.q1
+	q_t[2] = sat_tar.q2
+	q_t[3] = sat_tar.q3
+	q_e = - q0*q + q0*q_t - cross(q,q_t)
 	return kp*q_e - kr*ω
 end
 
