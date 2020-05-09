@@ -25,16 +25,20 @@ function main()
 	# 進行方向とSCOFx軸とのずれ（内積）
 	dotvs = zeros(DataNum)
 
-	# 軌道計算については先に行い、全  時間分を配列に保存する
-	JD_log, x_ecef_log, v_ecef_log, x_geod_log = orbit_cal(DataNum,dt,start_time,TLEFileName)
+	# 軌道・太陽方向計算については先に行い、全 時間分を配列に保存する
+	JD_log, x_ecef_log, v_ecef_log, x_geod_log, tles, eop_IAU2000A = orbit_cal(DataNum,dt,start_time,TLEFileName)
+	sunvector_index = sunvector_model(JD_log[1], tles)
 
 	h5open("orbit.h5", "w") do file
 		write(file, "JD_log", JD_log)  # alternatively, say "@write file A"
 		write(file, "x_ecef_log", x_ecef_log)
 		write(file, "v_ecef_log", v_ecef_log)
 		write(file, "x_geod_log", x_geod_log)
+		write(file, "sunvector_index", sunvector_index)
 	end
 
+	# 初期状態の衛星位置@ECI
+	x_eci_1st = rECEFtoECI(ITRF(), GCRF(), JD_log[1], eop_IAU2000A)*x_ecef_log[1,:]
 
 	# SCOF上での衛星の進行方向
 	direct_on_SCOFs = zeros(DataNum,3)
@@ -62,7 +66,7 @@ function main()
 		println("            dotv:",dotv)
 
 		# 衛星外環境モデル計算
-		mag_vec, sun_vec, atoms_dens = external_model(current_time,x_ecef_log[i,:],x_geod_log[i,:])
+		mag_vec, sun_vec, atoms_dens = external_model(current_time,x_ecef_log[i,:],x_geod_log[i,:], x_eci_1st, eop_IAU2000A, sunvector_index)
 		println("         mag_vec:",mag_vec)
 		mag_vecs[i,:] = ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true)*mag_vec
 		println("         sun_vec:",sun_vec)
@@ -75,6 +79,8 @@ function main()
 
 
 	end
+
+	plot = true
 
 	if plot == true
 		plot_2scalar(JD_log,dotvs,"dotvs")
