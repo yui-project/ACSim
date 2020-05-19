@@ -1,7 +1,8 @@
 include("orbit/orbit.jl")
 include("external_model/external_model.jl")
+include("external_model/disturbance_torque.jl")
 #include("dynamic_model/dynamic_model.jl")
-#include("dynamics/dynamics.jl")
+include("dynamics/dynamics.jl")
 #include("satellite/satellite.jl")
 include("plot/plot_plots.jl")
 #include("plot/plot_makie.jl")
@@ -48,8 +49,19 @@ function main()
 	sun_vecs = zeros(DataNum,3)
 	atoms_denses = zeros(DataNum)
 
-  	# 衛星内環境モデル用変数
-  	torqe = zeros(DataNum,3)
+	# 衛星内環境モデル用変数
+	disturbance = zeros(DataNum, 3)
+	torqe = zeros(DataNum,3)
+
+	#衛星姿勢用変数
+	sat_attqua_elements = zeros(DataNum+1, 4)
+	sat_attqua_elements[1,:] = [cos(π/4), sin(π/4), 0, 0]
+	sat_ω = zeros(DataNum+1, 3)
+
+	# トルク用変数
+	airtorques = zeros(DataNum, 3)
+	suntorques = zeros(DataNum, 3)
+	magtorques = zeros(DataNum, 3)
 
 	for i=1:DataNum
 
@@ -76,7 +88,35 @@ function main()
 
 		direct_on_SCOFs[i,:] = ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true) * v_ecef_log[i,:]
 
+		current_qua = SatelliteToolbox.Quaternion(cos(π/4), sin(π/4)/sqrt(3), sin(π/4)/sqrt(3), sin(π/4)/sqrt(3))
 
+		# 衛星姿勢
+		qua = SatelliteToolbox.Quaternion(sat_attqua_elements[i,1], sat_attqua_elements[i,2], sat_attqua_elements[i,3], sat_attqua_elements[i,4])
+		
+
+		#擾乱の計算
+		v_scof = [norm(v_ecef_log[i,:]), 0., 0.]
+		Ts = sun_pressure(sun_vecs[i,:], current_qua)
+		suntorques[i,:] = Ts
+		Ta = air_pressure(atoms_denses[i], v_scof, current_qua)
+		airtorques[i,:] = Ta
+		disturbance[i,:] = Ts + Ta
+
+		#磁気トルカの計算
+		M = [0.01, 0., 0.]
+		magvec_scsfqua = qua * mag_vec / qua
+		magvec_scsf = [magvec_scsfqua.q1*10^(-9), magvec_scsfqua.q2*10^(-9), magvec_scsfqua.q3*10^(-9)]
+		Tm = cross(M, magvec_scsf)
+		magtorques[i,:] = Tm
+
+		# ダイナミクス
+		qua = SatelliteToolbox.Quaternion(sat_attqua_elements[i,1], sat_attqua_elements[i,2], sat_attqua_elements[i,3], sat_attqua_elements[i,4])
+		I=[2*(0.1^2)/3 0. 0.;
+		0. 2*(0.1^2)/3 0.;
+		0. 0. 2*(0.1^2)/3]
+		next_qua, ω = dynamics(qua, sat_ω[i,:], Ts+Ta+Tm, I, dt)
+		sat_attqua_elements[i+1, :] = [next_qua.q0, next_qua.q1, next_qua.q2, next_qua.q3]
+		sat_ω[i+1, :] = ω
 
 	end
 
@@ -94,10 +134,14 @@ function main()
 		plot_vec(v_ecef_log,"v_ecef_log")
 		plot_vec(x_geod_log,"x_geod_log")
 		plot_2scalar(x_geod_log[:,2],x_geod_log[:,1],"x_geod_log_2d")
+		plot_vec(disturbance, "disturbance")
+		plot_3scalar(JD_log, sat_ω[1:DataNum, 1], sat_ω[1:DataNum, 2], sat_ω[1:DataNum, 3], ["x", "y", "z"], "omega")
+		plot_3scalar(JD_log, airtorques[1:DataNum, 1], suntorques[1:DataNum, 1], magtorques[1:DataNum, 1], ["air", "sun", "mag"], "x_torques")
+		plot_3scalar(JD_log, airtorques[1:DataNum, 2], suntorques[1:DataNum, 2], magtorques[1:DataNum, 2], ["air", "sun", "mag"], "y_torques")
+		plot_3scalar(JD_log, airtorques[1:DataNum, 3], suntorques[1:DataNum, 3], magtorques[1:DataNum, 3], ["air", "sun", "mag"], "z_torques")
+		
+		
 	end
-
-	
-
 
 	
 end
