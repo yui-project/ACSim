@@ -4,6 +4,7 @@ include("external_model/disturbance_torque.jl")
 #include("dynamic_model/dynamic_model.jl")
 include("dynamics/dynamics.jl")
 #include("satellite/satellite.jl")
+include("satellite/attitude_control.jl")
 include("plot/plot_plots.jl")
 #include("plot/plot_makie.jl")
 include("coordinates.jl")
@@ -18,8 +19,8 @@ function main()
 	#=
 	設定パラメータ
 	=#
-	DataNum =1000 #シミュレータ反復回数
-	dt = 5 ##シミュレータの計算間隔 [s]
+	DataNum = 5000 #シミュレータ反復回数
+	dt = 10 ##シミュレータの計算間隔 [s]
 	start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
 
@@ -29,6 +30,7 @@ function main()
 	# 軌道・太陽方向計算については先に行い、全 時間分を配列に保存する
 	JD_log, x_ecef_log, v_ecef_log, x_geod_log, tles, eop_IAU2000A = orbit_cal(DataNum,dt,start_time,TLEFileName)
 	sunvector_index = sunvector_model(JD_log[1], tles)
+	#println(size(sunvector_index))
 
 	h5open("orbit.h5", "w") do file
 		write(file, "JD_log", JD_log)  # alternatively, say "@write file A"
@@ -57,6 +59,7 @@ function main()
 	sat_attqua_elements = zeros(DataNum+1, 4)
 	sat_attqua_elements[1,:] = [cos(π/4), sin(π/4), 0, 0]
 	sat_ω = zeros(DataNum+1, 3)
+	sat_ω[1, :] = [0.33, 0.33, 0.33]
 
 	# トルク用変数
 	airtorques = zeros(DataNum, 3)
@@ -66,7 +69,7 @@ function main()
 	for i=1:DataNum
 
 		# 時刻表示
-		current_time = start_time+Second(dt) * i
+		current_time = start_time + Second(dt) * i
 		println("")
 		println("Current DateTime:",current_time)
 		println("              JD:",JD_log[i])
@@ -103,9 +106,15 @@ function main()
 		disturbance[i,:] = Ts + Ta
 
 		#磁気トルカの計算
-		M = [0.01, 0., 0.]
+		
+		#M = [0., 0., 0.]
 		magvec_scsfqua = qua * mag_vec / qua
 		magvec_scsf = [magvec_scsfqua.q1*10^(-9), magvec_scsfqua.q2*10^(-9), magvec_scsfqua.q3*10^(-9)]
+		if i==1
+			M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i, :])
+		else
+			M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i-1, :])
+		end
 		Tm = cross(M, magvec_scsf)
 		magtorques[i,:] = Tm
 

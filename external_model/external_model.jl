@@ -58,7 +58,7 @@ function external_model(current_time,r_ecef, r_geod,r_eci_1st, eop_IAU2000A, sun
         θ = 2π - θ
     end
      # indexからどの要素を抜き出すか
-    index_num = round(Int64, 10*rad2deg(θ))
+    index_num = round(Int64, 10*rad2deg(θ)) +1
     sun_vecs = sunvector_index[index_num, 2:4]
 
     # 大気密度計算

@@ -1,5 +1,5 @@
 include("../plot/plot_plots.jl")
-include("../plot/plot_makie.jl")
+# include("../plot/plot_makie.jl")
 
 using Dates
 using Quaternions
@@ -72,14 +72,21 @@ B-dot法により
 
 # Argments
  - `B`：地磁気ベクトル@ECEF
- - `ω`：位置ベクトルの角速度（ベクトル） 
- - `I`：慣性テンソル
+ - `ω`：位置ベクトルの角速度（ベクトル)
 
 # Return
 - `m`：必要磁気モーメント
 """
-function B_dot(B, ω, I)
+function B_dot(B, ω, ω_b)
+	k = zeros(3)
 
+	k[1] = 7*10^(-5)
+	k[2] = 7*10^(-5)
+	k[3] = 7*10^(-5)
+
+	m = k .* cross(B, ω)
+
+	return m
 end
 
 
