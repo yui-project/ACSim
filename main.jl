@@ -1,6 +1,7 @@
 include("orbit/orbit.jl")
 include("external_model/external_model.jl")
 include("external_model/disturbance_torque.jl")
+include("internal_model/magnetic_torque.jl")
 #include("dynamic_model/dynamic_model.jl")
 include("dynamics/dynamics.jl")
 #include("satellite/satellite.jl")
@@ -19,7 +20,7 @@ function main()
 	#=
 	設定パラメータ
 	=#
-	DataNum = 5000 #シミュレータ反復回数
+	DataNum = 1000 #シミュレータ反復回数
 	dt = 10 ##シミュレータの計算間隔 [s]
 	start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
@@ -54,6 +55,7 @@ function main()
 	# 衛星内環境モデル用変数
 	disturbance = zeros(DataNum, 3)
 	torqe = zeros(DataNum,3)
+	mtq_currentlog = zeros(DataNum, 3)
 
 	#衛星姿勢用変数
 	sat_attqua_elements = zeros(DataNum+1, 4)
@@ -110,12 +112,24 @@ function main()
 		#M = [0., 0., 0.]
 		magvec_scsfqua = qua * mag_vec / qua
 		magvec_scsf = [magvec_scsfqua.q1*10^(-9), magvec_scsfqua.q2*10^(-9), magvec_scsfqua.q3*10^(-9)]
+		atoms_denses[i] = atoms_dens
+
 		if i==1
 			M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i, :])
 		else
 			M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i-1, :])
 		end
-		Tm = cross(M, magvec_scsf)
+		i_m = mm2current_theory(M)
+		for j = 1:3
+			if i_m[j] > 0.2
+				i_m[j] = 0.2
+			elseif i_m[j] < -0.2
+				i_m[j] = -0.2
+			end
+		end
+		println("  current_mag:",i_m)
+		mtq_currentlog[i, :] = i_m 
+		Tm = magnetic_torque(i_m, magvec_scsf)
 		magtorques[i,:] = Tm
 
 		# ダイナミクス
@@ -148,6 +162,7 @@ function main()
 		plot_3scalar(JD_log, airtorques[1:DataNum, 1], suntorques[1:DataNum, 1], magtorques[1:DataNum, 1], ["air", "sun", "mag"], "x_torques")
 		plot_3scalar(JD_log, airtorques[1:DataNum, 2], suntorques[1:DataNum, 2], magtorques[1:DataNum, 2], ["air", "sun", "mag"], "y_torques")
 		plot_3scalar(JD_log, airtorques[1:DataNum, 3], suntorques[1:DataNum, 3], magtorques[1:DataNum, 3], ["air", "sun", "mag"], "z_torques")
+		plot_3scalar(JD_log, mtq_currentlog[:, 1], mtq_currentlog[:, 2], mtq_currentlog[:, 3], ["x", "y", "z"], "MTQcurrent")
 		
 		
 	end

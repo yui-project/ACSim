@@ -80,11 +80,11 @@ B-dot法により
 function B_dot(B, ω, ω_b)
 	k = zeros(3)
 
-	k[1] = 7*10^(-5)
-	k[2] = 7*10^(-5)
-	k[3] = 7*10^(-5)
+	k[1] = 10000
+	k[2] = 10000
+	k[3] = 10000
 
-	m = k .* cross(B, ω)
+	m = -1 * k .* cross(B, ω)
 
 	return m
 end
@@ -167,4 +167,49 @@ function attitude_control(sat_att, sat_tar, B, ω, I)
 end
 
 
+"""
+i = mm2current_theory(M)
 
+出力したい磁気モーメントから磁気トルカに流す電流値（理論値）を求める
+
+#Argments
+M : 必要とされる磁気モーメント [A/m2]
+
+#Return
+i : 磁気トルカに流す電流 [A]
+"""
+function mm2current_theory(M)
+	n = 400  # 巻き数　[巻]
+	L = 80  # コア長さ [mm]
+	D = 10  # コア直径 [mm]
+	μ = 5000  #コア初期比透磁率
+
+	S = π*(D/1000)^2/4  # 断面積 [m]
+	p = L/D
+	μeff = 1 / (1/μ + (log(p)-1)/(p^2))  # コア実効比透磁率
+
+	i = M / (μeff*n*S)
+
+	return i
+end
+
+
+"""
+i = mm2current_measure(M)
+
+出力したい磁気モーメントから磁気トルカに流す電流値（実験値）を求める
+
+#Argments
+M : 必要とされる磁気モーメント [A/m2]
+
+#Return
+i : 磁気トルカに流す電流 [A]
+"""
+function mm2current_measure(M)
+	slope = [0.92, 0.92, 0.92]
+	intercept = [0.001, 0.001, 0.001]  # ix = slope[1] * Mx + intercept[1]となる様な切片、傾き
+
+	i = slope .* M + intercept
+
+	return i
+end
