@@ -13,8 +13,8 @@ mag_tor = magneric_torque(i_m, B)
 
 """
 function magnetic_torque(i_m, B)
-    μ = 5000 #透磁率
-    n = 400 #巻き数
+  μ = 5000 #透磁率
+  n = 400 #巻き数
 	L = 80  #コア長さ
 	D = 10  #コア直径
 	m_r = [0.01, 0.01, 0.01] #残留磁気モーメント
@@ -28,8 +28,9 @@ function magnetic_torque(i_m, B)
 
 
 	#磁気モーメント計算
-    m[1,:] = μeff*n*S*i_m[1]*[1,0,0]
-    m[2,:] = μeff*n*S*i_m[2]*[0,1,0]
+
+  m[1,:] = μeff*n*S*i_m[1]*[1,0,0]
+  m[2,:] = μeff*n*S*i_m[2]*[0,1,0]
 	m[3,:] = μeff*n*S*i_m[3]*[0,0,1]
 	m[4,:] = m_r
 
