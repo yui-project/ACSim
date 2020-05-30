@@ -62,6 +62,7 @@ function main()
 	sat_attqua_elements[1,:] = [cos(π/4), sin(π/4), 0, 0]
 	sat_ω = zeros(DataNum+1, 3)
 	sat_ω[1, :] = [0.33, 0.33, 0.33]
+	sat_attqua_elements[1, :] = [cos(π/4), sin(π/4)/sqrt(3), sin(π/4)/sqrt(3), sin(π/4)/sqrt(3)]
 
 	# トルク用変数
 	airtorques = zeros(DataNum, 3)
@@ -93,7 +94,6 @@ function main()
 
 		direct_on_SCOFs[i,:] = ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true) * v_ecef_log[i,:]
 
-		current_qua = SatelliteToolbox.Quaternion(cos(π/4), sin(π/4)/sqrt(3), sin(π/4)/sqrt(3), sin(π/4)/sqrt(3))
 
 		# 衛星姿勢
 		qua = SatelliteToolbox.Quaternion(sat_attqua_elements[i,1], sat_attqua_elements[i,2], sat_attqua_elements[i,3], sat_attqua_elements[i,4])
@@ -101,9 +101,9 @@ function main()
 
 		#擾乱の計算
 		v_scof = [norm(v_ecef_log[i,:]), 0., 0.]
-		Ts = sun_pressure(sun_vecs[i,:], current_qua)
+		Ts = sun_pressure(sun_vecs[i,:], qua)
 		suntorques[i,:] = Ts
-		Ta = air_pressure(atoms_denses[i], v_scof, current_qua)
+		Ta = air_pressure(atoms_denses[i], v_scof, qua)
 		airtorques[i,:] = Ta
 		disturbance[i,:] = Ts + Ta
 
