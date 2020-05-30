@@ -3,6 +3,11 @@ using SatelliteToolbox
 
 """
 test
+<<<<<<< HEAD
+
+sun_vol = sun_sensor(sun_vecs, sat_pos, sat_att)
+=======
+>>>>>>> 962a761caa073dc4642150ee510ba01a5028542a
 
 
 ss_out = sun_sensor(sun_vecs, ss_dir)
