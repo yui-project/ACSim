@@ -172,8 +172,10 @@ function targetqua_dicision(shooting_vec, current_attqua, sat_axisval)
     targetqua = SatelliteToolbox.Quaternion(0., 1., 0., 0.)
     
     c2θ = dot(camera_initialdir, shooting_vec) / (norm(camera_initialdir)*norm(shooting_vec))
+    println("c2θ", c2θ)
     axis_seof = cross(camera_initialdir, shooting_vec)
     axis_seof = axis_seof / norm(axis_seof)
+    println("axis_seof", axis_seof)
 
     cθ = sqrt((1+c2θ)/2)
     # θが回転限界を超えていたらθを回転限界まで抑える

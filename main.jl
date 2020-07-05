@@ -6,6 +6,7 @@ include("internal_model/magnetic_torque.jl")
 include("dynamics/dynamics.jl")
 #include("satellite/satellite.jl")
 include("satellite/attitude_control.jl")
+include("satellite/target_decision.jl")
 include("plot/plot_plots.jl")
 #include("plot/plot_makie.jl")
 include("coordinates.jl")
@@ -20,8 +21,8 @@ function main()
 	#=
 	設定パラメータ
 	=#
-	DataNum = 1000 #シミュレータ反復回数
-	dt = 10 ##シミュレータの計算間隔 [s]
+	DataNum = 5000 #シミュレータ反復回数
+	dt = 5 ##シミュレータの計算間隔 [s]
 	start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
 
@@ -59,18 +60,38 @@ function main()
 
 	#衛星姿勢用変数
 	sat_attqua_elements = zeros(DataNum+1, 4)
-	sat_attqua_elements[1,:] = [cos(π/4), sin(π/4), 0, 0]
+	sat_attqua_elements[1,:] = [cos(deg2rad(5)), 0., sin(deg2rad(5)), 0.]
 	sat_ω = zeros(DataNum+1, 3)
-	sat_ω[1, :] = [0.33, 0.33, 0.33]
-	sat_attqua_elements[1, :] = [cos(π/4), sin(π/4)/sqrt(3), sin(π/4)/sqrt(3), sin(π/4)/sqrt(3)]
+	sat_ω[1, :] = [0.0, 0.0, 0.0]
 
 	# トルク用変数
 	airtorques = zeros(DataNum, 3)
 	suntorques = zeros(DataNum, 3)
 	magtorques = zeros(DataNum, 3)
+	M_reqs = zeros(DataNum, 3)
+	T_reqs = zeros(DataNum, 3)
+
+	# 撮影用パラメータの設定
+	limit_time = DataNum
+	targetpos_geod = [rad2deg(-0.75), rad2deg(0.4), 25.7]
+	targetpos_ecef = GeodetictoECEF(deg2rad(targetpos_geod[1]), deg2rad(targetpos_geod[2]), targetpos_geod[3])
+	cam_viewangle = 40
+	sat_axisval = 80
+	cam_origindir = [0., 0., 1.]
+	satqua = SatelliteToolbox.Quaternion(sat_attqua_elements[1,1], sat_attqua_elements[1,2], sat_attqua_elements[1,3], sat_attqua_elements[1,4])
+	shoot_time, shoot_vec = shootingtime_decision2(x_ecef_log[1:DataNum, :], targetpos_ecef, 1, limit_time, cam_viewangle, sat_axisval)
+	println("shoottime", shoot_time)
+	println("shoot_vec", shoot_vec)
+	targetqua, rotqua = targetqua_dicision(shoot_vec, satqua, sat_axisval)
+	targetqua = SatelliteToolbox.Quaternion(1., 0., 0., 0.)
+	println("targetqua:", targetqua)
+	println("   rotqua:", rotqua)
+	cam_dir = zeros(DataNum, 3)
+	target_deffs = zeros(DataNum)
 
 	for i=1:DataNum
 
+		
 		# 時刻表示
 		current_time = start_time + Second(dt) * i
 		println("")
@@ -86,7 +107,9 @@ function main()
 		# 衛星外環境モデル計算
 		mag_vec, sun_vec, atoms_dens = external_model(current_time,x_ecef_log[i,:],x_geod_log[i,:], x_eci_1st, eop_IAU2000A, sunvector_index)
 		println("         mag_vec:",mag_vec)
-		mag_vecs[i,:] = ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true)*mag_vec
+		mag_vec_seof = ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true)*mag_vec
+		# mag_vec_seof = [40000., 0., 0.]
+		mag_vecs[i,:] = mag_vec_seof
 		println("         sun_vec:",sun_vec)
 		sun_vecs[i,:] = sun_vec
 		println("      atoms_dens:",atoms_dens)
@@ -99,21 +122,29 @@ function main()
 		qua = SatelliteToolbox.Quaternion(sat_attqua_elements[i,1], sat_attqua_elements[i,2], sat_attqua_elements[i,3], sat_attqua_elements[i,4])
 		
 
+		
 		#擾乱の計算
 		v_scof = [norm(v_ecef_log[i,:]), 0., 0.]
 		Ts = sun_pressure(sun_vecs[i,:], qua)
+		Ts = [0., 0., 0.]
 		suntorques[i,:] = Ts
 		Ta = air_pressure(atoms_denses[i], v_scof, qua)
+		Ta = [0., 0., 0.]
 		airtorques[i,:] = Ta
 		disturbance[i,:] = Ts + Ta
 
 		#磁気トルカの計算
 		
 		#M = [0., 0., 0.]
-		magvec_scsfqua = qua * mag_vec / qua
+		magvec_scsfqua = qua \ mag_vec_seof * qua
+		atoms_denses[i] = atoms_dens
+		# magvec_scsfqua = qua * mag_vecs[1,:] / qua
 		magvec_scsf = [magvec_scsfqua.q1*10^(-9), magvec_scsfqua.q2*10^(-9), magvec_scsfqua.q3*10^(-9)]
+		println("  scsf_mag_vec:", magvec_scsf)
 		atoms_denses[i] = atoms_dens
 
+		"""
+		# B-dot法による回転抑制制御
 		if i==1
 			M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i, :])
 		else
@@ -131,15 +162,58 @@ function main()
 		mtq_currentlog[i, :] = i_m 
 		Tm = magnetic_torque(i_m, magvec_scsf)
 		magtorques[i,:] = Tm
+		"""
+
+		# Cross-Product法による指向制御
+		
+		kp = 0.000000030
+		kr = 0#.0000000030
+		Treq, M = cross_product(targetqua, qua, kp, kr, sat_ω[i, :], mag_vec*10^(-9))
+		T_reqs[i, :] = Treq
+		M_reqs[i, :] = M
+		println("request_Moment:", M)
+		
+		i_m = mm2current_theory(M)
+		for j = 1:3
+			if i_m[j] > 0.2
+				reduce_rate = 0.2 / i_m[j]
+				i_m[j] = 0.2
+			elseif i_m[j] < -0.2
+				i_m[j] = -0.2
+			end
+		end
+		
+		# M = [0.005, 0., 0.]
+		# i_m = M
+		println("  current_mag:",i_m)
+		mtq_currentlog[i, :] = i_m
+		Tm = magnetic_torque(i_m, magvec_scsf)
+		magtorques[i,:] = Tm
+		
 
 		# ダイナミクス
 		qua = SatelliteToolbox.Quaternion(sat_attqua_elements[i,1], sat_attqua_elements[i,2], sat_attqua_elements[i,3], sat_attqua_elements[i,4])
 		I=[2*(0.1^2)/3 0. 0.;
 		0. 2*(0.1^2)/3 0.;
 		0. 0. 2*(0.1^2)/3]
-		next_qua, ω = dynamics(qua, sat_ω[i,:], Ts+Ta+Tm, I, dt)
+		next_qua, ω = dynamics(qua, sat_ω[i,:], Ta+Ts+Tm, I, dt)
 		sat_attqua_elements[i+1, :] = [next_qua.q0, next_qua.q1, next_qua.q2, next_qua.q3]
 		sat_ω[i+1, :] = ω
+
+		# カメラ方向
+		cam_dir_q = qua * cam_origindir / qua
+		cam_dir[i, :] = [cam_dir_q.q1, cam_dir_q.q2, cam_dir_q.q3]
+		qua1 = qua * [0., 0., 1.] / qua
+		vec1 = [qua1.q1, qua1.q2, qua1.q3]
+		qua2 = targetqua * [0., 0., 1.] / targetqua
+		vec2 = [qua2.q1, qua2.q2, qua2.q3]
+		cθ = dot(vec1, vec2)
+		sθ = norm(cross(vec1, vec2))
+		target_deffs[i] = rad2deg(acos(cθ))
+		if sθ<0
+			target_deffs[i] = target_deffs[i] * -1
+		end
+		
 
 	end
 
@@ -162,7 +236,12 @@ function main()
 		plot_3scalar(JD_log, airtorques[1:DataNum, 1], suntorques[1:DataNum, 1], magtorques[1:DataNum, 1], ["air", "sun", "mag"], "x_torques")
 		plot_3scalar(JD_log, airtorques[1:DataNum, 2], suntorques[1:DataNum, 2], magtorques[1:DataNum, 2], ["air", "sun", "mag"], "y_torques")
 		plot_3scalar(JD_log, airtorques[1:DataNum, 3], suntorques[1:DataNum, 3], magtorques[1:DataNum, 3], ["air", "sun", "mag"], "z_torques")
+		plot_3scalar(JD_log, T_reqs[1:DataNum, 1], T_reqs[1:DataNum, 2], T_reqs[1:DataNum, 3], ["x", "y", "z"], "request_torques")
 		plot_3scalar(JD_log, mtq_currentlog[:, 1], mtq_currentlog[:, 2], mtq_currentlog[:, 3], ["x", "y", "z"], "MTQcurrent")
+		plot_3scalar(JD_log, sat_attqua_elements[1:DataNum, 2], sat_attqua_elements[1:DataNum, 3], sat_attqua_elements[1:DataNum, 4], ["q1", "q2", "q3"], "attqua_1")
+		plot_2scalar(JD_log, sat_attqua_elements[1:DataNum, 1], "attqua_2")
+		plot_vec(cam_dir, "cam_dir")
+		plot_2scalar(JD_log, target_deffs, "target_deffs")
 		
 		
 	end

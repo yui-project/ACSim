@@ -57,7 +57,10 @@ function lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
 	q_t[1] = sat_tar.q1
 	q_t[2] = sat_tar.q2
 	q_t[3] = sat_tar.q3
+	#println("q", q)
+	#println("qt", q_t)
 	q_e = - q0*q + q0*q_t - cross(q,q_t)
+	#println("qe", q_e)
 	return kp*q_e - kr*ω
 end
 
@@ -109,9 +112,10 @@ function cross_product(sat_tar, sat_att, kp, kr, ω, B)
 	m = zeros(3)
 	#必要トルクを求める
 	t_req = lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
+	#println("t_req", t_req)
 	#必要磁気モーメントを求める
 	m = -(cross(t_req, B/norm(B)))/(norm(B))
-	return m
+	return t_req, m
 end
 
 
