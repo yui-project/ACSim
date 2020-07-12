@@ -52,7 +52,7 @@ function sun_pressure(sun_vecs, current_qua)
 
 
     #太陽方向ベクトルのBody座標系変換
-    sunvecs_scsfqua = current_qua * sun_vecs / current_qua
+    sunvecs_scsfqua = current_qua \ sun_vecs * current_qua
     #println(sunvecs_scsfqua)
     sunvecs_scsf = [sunvecs_scsfqua.q1, sunvecs_scsfqua.q2, sunvecs_scsfqua.q3]
 
@@ -132,7 +132,7 @@ function air_pressure(density, vel_seof, current_qua)
     Cd = 1.12 #抗力係数（各面を正方形と近似）
 
     # 速度ベクトルのBody座標系への変換
-    vel_scsfqua = current_qua * vel_seof / current_qua
+    vel_scsfqua = current_qua \ vel_seof * current_qua
     vel_scsf = [vel_scsfqua.q1, vel_scsfqua.q2, vel_scsfqua.q3]
 
 

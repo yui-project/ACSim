@@ -184,10 +184,12 @@ function targetqua_dicision(shooting_vec, current_attqua, sat_axisval)
     end
     sθ = sqrt(1- cθ^2)
 
-    targetqua = SatelliteToolbox.Quaternion(cθ, axis_seof[1]*sθ, axis_seof[2]*sθ, axis_seof[3]*sθ)
+    # targetqua = SatelliteToolbox.Quaternion(cθ, axis_seof[1]*sθ, axis_seof[2]*sθ, axis_seof[3]*sθ)
+    # Φ = acos(current_attqua * targetqua)
+    # targetqua05 = sin(0.5 * Φ) / sin(Φ) * current_attqua  + sin(0.5 * Φ) / sin(Φ) * targetqua
     rotqua = targetqua / current_attqua
 
-    return targetqua, rotqua
+    return targetqua, rotqua #targetqua05, rotqua
 end
 
 

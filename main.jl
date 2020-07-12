@@ -60,9 +60,9 @@ function main()
 
 	#衛星姿勢用変数
 	sat_attqua_elements = zeros(DataNum+1, 4)
-	sat_attqua_elements[1,:] = [cos(deg2rad(5)), 0., sin(deg2rad(5)), 0.]
+	sat_attqua_elements[1,:] = [cos(deg2rad(30)), 1/sqrt(3)*sin(deg2rad(30)), 1/sqrt(3)*sin(deg2rad(30)), 1/sqrt(3)*sin(deg2rad(30)),]
 	sat_ω = zeros(DataNum+1, 3)
-	sat_ω[1, :] = [0.0, 0.0, 0.0]
+	sat_ω[1, :] = [0., 0., 0.]
 
 	# トルク用変数
 	airtorques = zeros(DataNum, 3)
@@ -83,7 +83,7 @@ function main()
 	println("shoottime", shoot_time)
 	println("shoot_vec", shoot_vec)
 	targetqua, rotqua = targetqua_dicision(shoot_vec, satqua, sat_axisval)
-	targetqua = SatelliteToolbox.Quaternion(1., 0., 0., 0.)
+	# targetqua = SatelliteToolbox.Quaternion(cos(deg2rad(5)), 0., sin(deg2rad(5)), 0.)
 	println("targetqua:", targetqua)
 	println("   rotqua:", rotqua)
 	cam_dir = zeros(DataNum, 3)
@@ -108,7 +108,7 @@ function main()
 		mag_vec, sun_vec, atoms_dens = external_model(current_time,x_ecef_log[i,:],x_geod_log[i,:], x_eci_1st, eop_IAU2000A, sunvector_index)
 		println("         mag_vec:",mag_vec)
 		mag_vec_seof = ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true)*mag_vec
-		# mag_vec_seof = [40000., 0., 0.]
+		# mag_vec_seof = [0., 40000., 0.]
 		mag_vecs[i,:] = mag_vec_seof
 		println("         sun_vec:",sun_vec)
 		sun_vecs[i,:] = sun_vec
@@ -166,9 +166,17 @@ function main()
 
 		# Cross-Product法による指向制御
 		
-		kp = 0.000000030
-		kr = 0#.0000000030
-		Treq, M = cross_product(targetqua, qua, kp, kr, sat_ω[i, :], mag_vec*10^(-9))
+		kp = 0.000000050
+		kr = 0.0000050
+		#=
+		if i < DataNum/2
+			tar_qua = targetqua2
+		else
+			tar_qua = targetqua
+		end
+		=#
+		tar_qua = targetqua
+		Treq, M = cross_product(tar_qua, qua, kp, kr, sat_ω[i, :], magvec_scsf)
 		T_reqs[i, :] = Treq
 		M_reqs[i, :] = M
 		println("request_Moment:", M)
@@ -177,9 +185,10 @@ function main()
 		for j = 1:3
 			if i_m[j] > 0.2
 				reduce_rate = 0.2 / i_m[j]
-				i_m[j] = 0.2
+				i_m = reduce_rate * i_m
 			elseif i_m[j] < -0.2
-				i_m[j] = -0.2
+				reduce_rate = -0.2 / i_m[j]
+				i_m = reduce_rate * i_m
 			end
 		end
 		
@@ -196,7 +205,8 @@ function main()
 		I=[2*(0.1^2)/3 0. 0.;
 		0. 2*(0.1^2)/3 0.;
 		0. 0. 2*(0.1^2)/3]
-		next_qua, ω = dynamics(qua, sat_ω[i,:], Ta+Ts+Tm, I, dt)
+		# next_qua, ω = dynamics(qua, sat_ω[i,:], Ta+Ts+Tm, I, dt)
+		next_qua, ω = dynamics(qua, sat_ω[i,:], Treq, I, dt)
 		sat_attqua_elements[i+1, :] = [next_qua.q0, next_qua.q1, next_qua.q2, next_qua.q3]
 		sat_ω[i+1, :] = ω
 
@@ -210,7 +220,7 @@ function main()
 		cθ = dot(vec1, vec2)
 		sθ = norm(cross(vec1, vec2))
 		target_deffs[i] = rad2deg(acos(cθ))
-		if sθ<0
+		if sθ < 0
 			target_deffs[i] = target_deffs[i] * -1
 		end
 		
@@ -237,6 +247,7 @@ function main()
 		plot_3scalar(JD_log, airtorques[1:DataNum, 2], suntorques[1:DataNum, 2], magtorques[1:DataNum, 2], ["air", "sun", "mag"], "y_torques")
 		plot_3scalar(JD_log, airtorques[1:DataNum, 3], suntorques[1:DataNum, 3], magtorques[1:DataNum, 3], ["air", "sun", "mag"], "z_torques")
 		plot_3scalar(JD_log, T_reqs[1:DataNum, 1], T_reqs[1:DataNum, 2], T_reqs[1:DataNum, 3], ["x", "y", "z"], "request_torques")
+		plot_vec(T_reqs, "request_torques_vec")
 		plot_3scalar(JD_log, mtq_currentlog[:, 1], mtq_currentlog[:, 2], mtq_currentlog[:, 3], ["x", "y", "z"], "MTQcurrent")
 		plot_3scalar(JD_log, sat_attqua_elements[1:DataNum, 2], sat_attqua_elements[1:DataNum, 3], sat_attqua_elements[1:DataNum, 4], ["q1", "q2", "q3"], "attqua_1")
 		plot_2scalar(JD_log, sat_attqua_elements[1:DataNum, 1], "attqua_2")
