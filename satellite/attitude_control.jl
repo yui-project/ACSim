@@ -60,6 +60,7 @@ function lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
 	#println("q", q)
 	#println("qt", q_t)
 	q_e = - q0*q + q0*q_t - cross(q,q_t)
+	# q0_e = q0 * q0_t + dot(q, q_t)
 	#println("qe", q_e)
 	return kp*q_e - kr*ω
 end
@@ -118,34 +119,7 @@ function cross_product(sat_tar, sat_att, kp, kr, ω, B)
 	return t_req, m
 end
 
-"""
-m = neo_cross_product(sat_tar, sat_att, kp, kr, ω, B)
 
-cross_product法により
-姿勢制御する際に必要な磁気モーメントを求める
-
-# Argments
- - `sat_tar`：目標姿勢クォータニオン
- - `sat_att`：現在の衛星姿勢クォータニオン
- - `kp`：ポイントゲイン
- - `kr`：レートゲイン
- - `ω`：位置ベクトルの角速度（ベクトル）
- - `B`：地磁気ベクトル@ECEF
-
-# Return
- - `m`：必要磁気モーメント
-"""
-function neo_cross_product(sat_tar, sat_att, kp, kr, ω, B)
-	m = zeros(3)
-
-	
-	#必要トルクを求める
-	t_req = lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
-	#println("t_req", t_req)
-	#必要磁気モーメントを求める
-	m = -(cross(t_req, B/norm(B)))/(norm(B))
-	return t_req, m
-end
 
 """
 m = pseudo_inverse(sat_tar, sat_att, kp, kr, ω, B)

@@ -95,7 +95,6 @@ shootingtime = shootingtime_decision2(satplace_plans, targetplace, currenttime, 
  - `sat_axisval`：衛星のポインティング時回転角度限界 [deg]
 # Return
 - `shootingtime`：撮影時刻(呼び出し元でのループ回数)
-- `shooting_vec`：撮影時衛星->撮影地点方向ベクトル@ECEF
 """
 
 function shootingtime_decision2(satplace_plans, targetplace, currenttime, limit_time,cam_viewangle, sat_axisval)
@@ -137,6 +136,7 @@ function shootingtime_decision2(satplace_plans, targetplace, currenttime, limit_
         shootingtime = shootingtime + currenttime -1
     end
 
+    #=
     r = sqrt(shooting_vec[1]^2+shooting_vec[2]^2)
     tφ = r/shooting_vec[3]
     if tφ > tand(sat_axisval)
@@ -145,35 +145,52 @@ function shootingtime_decision2(satplace_plans, targetplace, currenttime, limit_
 
         shooting_vec = shooting_vec / norm(shooting_vec)
     end
-    
-    return shootingtime, shooting_vec
+    =#
+    return shootingtime #, shooting_vec
 end
 
+
+
 """
-targetqua, rotqua = targetqua_dicision(shooting_vec, current_attqua)
+targetqua = targetqua_dicision(shooting_vec, current_attqua)
 
 撮影時の目標姿勢クォータニオンを求める
 
 # Argments
- - `shooting_vec` : 撮影時の撮影地点方向単位ベクトル @SEOF
- - `current_attqua` : 現在の姿勢クォータニオン
- - `sat_axisval`：衛星のポインティング時回転角度限界 [deg]
+- `targetplace`：撮影対象の位置ベクトル@ECEF
+- `satplace`：現在時刻~撮影期限までの衛星位置ベクトル@ECEF
+- `satvelo` : 衛星の速度ベクトル @ECEF
+- `sat_axisval`：衛星のポインティング時回転角度限界 [deg]
 
 # return
  - `targetqua` : 撮影時の目標姿勢クォータニオン
- - `rotqua` : 現在姿勢→目標姿勢になるために必要な回転を表すクォータニオン（SEOF基準）
 
 # Conditions
  - `camera_initialdir` = 衛星が基準姿勢時の、カメラ撮影面の単位法線ベクトル @SEOF
 
 """
-function targetqua_dicision(shooting_vec, current_attqua, sat_axisval)
+function targetqua_dicision(targetplace, satplace, satvelo, sat_axisval)
     camera_initialdir = [0., 0., 1.]
     targetqua = SatelliteToolbox.Quaternion(0., 1., 0., 0.)
     
-    c2θ = dot(camera_initialdir, shooting_vec) / (norm(camera_initialdir)*norm(shooting_vec))
+    shooting_vec = targetplace - satplace
+    shooting_vec = shooting_vec / norm(shooting_vec)
+    println("shootingvec:", shooting_vec)
+    #=
+    r = sqrt(shooting_vec[1]^2 + shooting_vec[2]^2)
+    tφ = r/shooting_vec[3]
+    if tφ > tand(sat_axisval)
+        shooting_vec[1] = shooting_vec[1] * shooting_vec[3] * tand(sat_axisval) / r
+        shooting_vec[2] = shooting_vec[2] * shooting_vec[3] * tand(sat_axisval) / r
+
+        shooting_vec = shooting_vec / norm(shooting_vec)
+    end
+    =#
+    shooting_vec_seof = ecef_to_DCM(satplace, satvelo,true) * shooting_vec
+	
+    c2θ = dot(camera_initialdir, shooting_vec_seof) / (norm(camera_initialdir)*norm(shooting_vec_seof))
     println("c2θ", c2θ)
-    axis_seof = cross(camera_initialdir, shooting_vec)
+    axis_seof = cross(camera_initialdir, shooting_vec_seof)
     axis_seof = axis_seof / norm(axis_seof)
     println("axis_seof", axis_seof)
 
@@ -184,12 +201,9 @@ function targetqua_dicision(shooting_vec, current_attqua, sat_axisval)
     end
     sθ = sqrt(1- cθ^2)
 
-    # targetqua = SatelliteToolbox.Quaternion(cθ, axis_seof[1]*sθ, axis_seof[2]*sθ, axis_seof[3]*sθ)
-    # Φ = acos(current_attqua * targetqua)
-    # targetqua05 = sin(0.5 * Φ) / sin(Φ) * current_attqua  + sin(0.5 * Φ) / sin(Φ) * targetqua
-    rotqua = targetqua / current_attqua
+    targetqua = SatelliteToolbox.Quaternion(cθ, axis_seof[1]*sθ, axis_seof[2]*sθ, axis_seof[3]*sθ)
 
-    return targetqua, rotqua #targetqua05, rotqua
+    return targetqua
 end
 
 

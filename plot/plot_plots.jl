@@ -8,8 +8,14 @@ function plot_2scalar(time,value,filename)
 	
 end
 
+function plot_2scalarp(time,value,filename)
+	plot(time,value)
+	savefig("./figs/" * filename * ".png", marker=:auto)
+	
+end
+
 function plot_2scalar_range(time,value,xrange, yrange,filename)
-	plot(time,value, xlims=(xrange[1], xrange[2]), ylims=(yrange[1], yrange[2]))
+	plot(time,value, xlims=(xrange[1], xrange[2]), ylims=(yrange[1], yrange[2]), marker = :auto)
 	savefig("./figs/" * filename * ".png")
 	
 end

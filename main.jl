@@ -60,7 +60,7 @@ function main()
 
 	#衛星姿勢用変数
 	sat_attqua_elements = zeros(DataNum+1, 4)
-	sat_attqua_elements[1,:] = [cos(deg2rad(30)), 1/sqrt(3)*sin(deg2rad(30)), 1/sqrt(3)*sin(deg2rad(30)), 1/sqrt(3)*sin(deg2rad(30)),]
+	sat_attqua_elements[1,:] = [cos(deg2rad(70)), -sin(deg2rad(70))/sqrt(2), sin(deg2rad(70))/sqrt(2), 0.]
 	sat_ω = zeros(DataNum+1, 3)
 	sat_ω[1, :] = [0., 0., 0.]
 
@@ -73,29 +73,35 @@ function main()
 
 	# 撮影用パラメータの設定
 	limit_time = DataNum
-	targetpos_geod = [rad2deg(-0.75), rad2deg(0.4), 25.7]
+	targetpos_geod = [0., 2., 25.7]
 	targetpos_ecef = GeodetictoECEF(deg2rad(targetpos_geod[1]), deg2rad(targetpos_geod[2]), targetpos_geod[3])
 	cam_viewangle = 40
 	sat_axisval = 80
 	cam_origindir = [0., 0., 1.]
+	shoot_timelength = 1200
 	satqua = SatelliteToolbox.Quaternion(sat_attqua_elements[1,1], sat_attqua_elements[1,2], sat_attqua_elements[1,3], sat_attqua_elements[1,4])
-	shoot_time, shoot_vec = shootingtime_decision2(x_ecef_log[1:DataNum, :], targetpos_ecef, 1, limit_time, cam_viewangle, sat_axisval)
+	shoot_time = shootingtime_decision2(x_ecef_log[1:DataNum, :], targetpos_ecef, 1, limit_time, cam_viewangle, sat_axisval)
 	println("shoottime", shoot_time)
-	println("shoot_vec", shoot_vec)
-	targetqua, rotqua = targetqua_dicision(shoot_vec, satqua, sat_axisval)
-	# targetqua = SatelliteToolbox.Quaternion(cos(deg2rad(5)), 0., sin(deg2rad(5)), 0.)
+	targetqua = targetqua_dicision(targetpos_ecef, x_ecef_log[shoot_time-120, :], v_ecef_log[shoot_time-120, :], sat_axisval)
+	# targetqua = SatelliteToolbox.Quaternion(cos(deg2rad(44)), sin(deg2rad(44))/sqrt(2), sin(deg2rad(44))/sqrt(2), 0.)
 	println("targetqua:", targetqua)
-	println("   rotqua:", rotqua)
 	cam_dir = zeros(DataNum, 3)
 	target_deffs = zeros(DataNum)
+	targetlocus_picture = zeros(240, 2)
+	campos_log = zeros(239, 2)
+	tarpos_log = zeros(239, 2)
+	j = 1
 
+	# sat_attqua_elements[1, : ] = [targetqua.q0, targetqua.q1, targetqua.q2, targetqua.q3]
+
+	
 	for i=1:DataNum
 
-		
 		# 時刻表示
 		current_time = start_time + Second(dt) * i
 		println("")
 		println("Current DateTime:",current_time)
+		println("       loop time:", i)
 		println("              JD:",JD_log[i])
 		println("      x_ecef_log:",x_ecef_log[i,:])
 		println("      v_ecef_log:",v_ecef_log[i,:])
@@ -126,10 +132,10 @@ function main()
 		#擾乱の計算
 		v_scof = [norm(v_ecef_log[i,:]), 0., 0.]
 		Ts = sun_pressure(sun_vecs[i,:], qua)
-		Ts = [0., 0., 0.]
+		# Ts = [0., 0., 0.]
 		suntorques[i,:] = Ts
 		Ta = air_pressure(atoms_denses[i], v_scof, qua)
-		Ta = [0., 0., 0.]
+		# Ta = [0., 0., 0.]
 		airtorques[i,:] = Ta
 		disturbance[i,:] = Ts + Ta
 
@@ -166,8 +172,8 @@ function main()
 
 		# Cross-Product法による指向制御
 		
-		kp = 0.000000050
-		kr = 0.0000050
+		kp = 0.000030
+		kr = 0.00030
 		#=
 		if i < DataNum/2
 			tar_qua = targetqua2
@@ -202,28 +208,62 @@ function main()
 
 		# ダイナミクス
 		qua = SatelliteToolbox.Quaternion(sat_attqua_elements[i,1], sat_attqua_elements[i,2], sat_attqua_elements[i,3], sat_attqua_elements[i,4])
-		I=[2*(0.1^2)/3 0. 0.;
-		0. 2*(0.1^2)/3 0.;
-		0. 0. 2*(0.1^2)/3]
+		I=[(0.1^2)/6 0.        0.;
+		    0.       (0.1^2)/6 0.;
+		    0.       0.        (0.1^2)/6]
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Ta+Ts+Tm, I, dt)
-		next_qua, ω = dynamics(qua, sat_ω[i,:], Treq, I, dt)
+		# next_qua, ω = dynamics(qua, sat_ω[i,:], Tm, I, dt)
+		# next_qua, ω = dynamics(qua, sat_ω[i,:], Treq, I, dt)
+		next_qua, ω = dynamics(qua, sat_ω[i,:], Treq+Ta+Ts, I, dt)
 		sat_attqua_elements[i+1, :] = [next_qua.q0, next_qua.q1, next_qua.q2, next_qua.q3]
 		sat_ω[i+1, :] = ω
+		println("quaternion:", qua)
+		println("onega : ", ω)
 
 		# カメラ方向
 		cam_dir_q = qua * cam_origindir / qua
 		cam_dir[i, :] = [cam_dir_q.q1, cam_dir_q.q2, cam_dir_q.q3]
-		qua1 = qua * [0., 0., 1.] / qua
+		qua1 = qua * cam_origindir / qua
 		vec1 = [qua1.q1, qua1.q2, qua1.q3]
-		qua2 = targetqua * [0., 0., 1.] / targetqua
+		qua2 = targetqua * cam_origindir / targetqua
 		vec2 = [qua2.q1, qua2.q2, qua2.q3]
-		cθ = dot(vec1, vec2)
-		sθ = norm(cross(vec1, vec2))
-		target_deffs[i] = rad2deg(acos(cθ))
-		if sθ < 0
-			target_deffs[i] = target_deffs[i] * -1
+		cθ = dot(vec1, vec2) / norm(vec1) / norm(vec2)
+		if cθ > 1.
+			cθ = 1
 		end
+		target_deffs[i] = rad2deg(acos(cθ))
+
+		# 撮影地点の画像上の軌跡
+		if norm(i - shoot_time) < 120
+			sat2tar_ecef = targetpos_ecef - x_ecef_log[i, :]
+			sat2tar_seof = ecef_to_DCM(x_ecef_log[i, :], v_ecef_log[i, :], true) * sat2tar_ecef
+			sat2tar_seof = sat2tar_seof / norm(sat2tar_seof) # 衛星→撮影対象の単位方向ベクトル
+			sat2tar_scsfqua = qua \ sat2tar_seof * qua
+			sat2tar_scsf = [sat2tar_scsfqua.q1, sat2tar_scsfqua.q2, sat2tar_scsfqua.q3]
+			sat2tar_scsf = sat2tar_scsf / norm(sat2tar_scsf)                  # カメラの単位方向ベクトル
+			tarpos_log[j, :] = [sat2tar_scsf[1] * x_geod_log[i, 3] / sat2tar_scsf[3], sat2tar_scsf[2] * x_geod_log[i, 3] / sat2tar_scsf[3]]
+			# if sat2tar_scsf[3] < 0
+			# 	tarpos_log[j, :] = [NaN, NaN]
+			# end
+			
+
+			#if norm(targetlocus_picture[j, 1]) > picture_xmax || norm(targetlocus_picture[j, 2]) > picture_ymax
+			#	targetlocus_picture[j, : ] = [NaN, NaN]
+			#end
+
+			j = j + 1
+
+			
+			if norm(i-shoot_time)%12 == 0
+				targetqua = targetqua_dicision(targetpos_ecef, x_ecef_log[i+12, :], v_ecef_log[i+12, :], sat_axisval)
+			end
+			
+			# targetqua = targetqua_dicision(targetpos_ecef, x_ecef_log[i, :], v_ecef_log[i, :], sat_axisval)
+		end
+
 		
+
+
 
 	end
 
@@ -253,7 +293,18 @@ function main()
 		plot_2scalar(JD_log, sat_attqua_elements[1:DataNum, 1], "attqua_2")
 		plot_vec(cam_dir, "cam_dir")
 		plot_2scalar(JD_log, target_deffs, "target_deffs")
-		
+		plot_2scalar(JD_log[shoot_time-120:shoot_time+120], target_deffs[shoot_time-120:shoot_time+120], "target_deffs2")
+		# plot_2scalar(campos_log[:, 1], campos_log[:, 2], "campos")
+		plot_2scalar(tarpos_log[:, 1], tarpos_log[:, 2], "tarpos")
+
+		# 撮影限界	画像サイズ16:9として範囲換算
+		picture_radius = x_geod_log[shoot_time, 3] * tand(cam_viewangle/2)
+		picture_xmax = 0.87 * picture_radius
+		picture_ymax = 0.49 * picture_radius
+		plot_2scalar_range(tarpos_log[:, 1], tarpos_log[:, 2], [-1*picture_xmax, picture_xmax], [-1*picture_ymax, picture_ymax], "targetlocus")
+		plot_2scalar(tarpos_log[:, 1], tarpos_log[:, 2], "targetlocus2")
+
+		# plot_2scalar(targetlocus_picture[:, 1], targetlocus_picture[:, 2], "targetlocus")
 		
 	end
 
