@@ -71,6 +71,10 @@ function main()
 	M_reqs = zeros(DataNum, 3)
 	T_reqs = zeros(DataNum, 3)
 
+	# 誤差検証
+	x_ecef_error = [100000., 100000., 100000. ]
+	
+
 	# 撮影用パラメータの設定
 	limit_time = DataNum
 	targetpos_geod = [0., 2., 25.7]
@@ -93,6 +97,7 @@ function main()
 	j = 1
 
 	# sat_attqua_elements[1, : ] = [targetqua.q0, targetqua.q1, targetqua.q2, targetqua.q3]
+
 
 	
 	for i=1:DataNum
@@ -183,7 +188,7 @@ function main()
 		=#
 		tar_qua = targetqua
 		Treq, M = cross_product(tar_qua, qua, kp, kr, sat_ω[i, :], magvec_scsf)
-		T_reqs[i, :] = Treq
+		# T_reqs[i, :] = Treq
 		M_reqs[i, :] = M
 		println("request_Moment:", M)
 		
@@ -198,6 +203,15 @@ function main()
 			end
 		end
 		
+		# Treqの離散化
+		Tmax = 1.0*10^(-5) # 最大出力トルク
+		t_scatternum = 255 # Treqを±255段階に分ける
+		Tresol = Tmax / t_scatternum # 出力トルクの分解能
+
+		Treq = round.(Treq / Tresol) * Tresol
+		T_reqs[i, :] = Treq
+
+
 		# M = [0.005, 0., 0.]
 		# i_m = M
 		println("  current_mag:",i_m)
@@ -235,8 +249,8 @@ function main()
 
 		# 撮影地点の画像上の軌跡
 		if norm(i - shoot_time) < 120
-			sat2tar_ecef = targetpos_ecef - x_ecef_log[i, :]
-			sat2tar_seof = ecef_to_DCM(x_ecef_log[i, :], v_ecef_log[i, :], true) * sat2tar_ecef
+			sat2tar_ecef = targetpos_ecef - (x_ecef_log[i, :] + x_ecef_error)
+			sat2tar_seof = ecef_to_DCM(x_ecef_log[i, :] + x_ecef_error, v_ecef_log[i, :], true) * sat2tar_ecef
 			sat2tar_seof = sat2tar_seof / norm(sat2tar_seof) # 衛星→撮影対象の単位方向ベクトル
 			sat2tar_scsfqua = qua \ sat2tar_seof * qua
 			sat2tar_scsf = [sat2tar_scsfqua.q1, sat2tar_scsfqua.q2, sat2tar_scsfqua.q3]
@@ -297,10 +311,10 @@ function main()
 		# plot_2scalar(campos_log[:, 1], campos_log[:, 2], "campos")
 		plot_2scalar(tarpos_log[:, 1], tarpos_log[:, 2], "tarpos")
 
-		# 撮影限界	画像サイズ16:9として範囲換算
+		# 撮影限界	画像サイズ4:3として範囲換算
 		picture_radius = x_geod_log[shoot_time, 3] * tand(cam_viewangle/2)
-		picture_xmax = 0.87 * picture_radius
-		picture_ymax = 0.49 * picture_radius
+		picture_xmax = 0.80 * picture_radius
+		picture_ymax = 0.60 * picture_radius
 		plot_2scalar_range(tarpos_log[:, 1], tarpos_log[:, 2], [-1*picture_xmax, picture_xmax], [-1*picture_ymax, picture_ymax], "targetlocus")
 		plot_2scalar(tarpos_log[:, 1], tarpos_log[:, 2], "targetlocus2")
 
