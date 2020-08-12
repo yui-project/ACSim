@@ -18,3 +18,20 @@ function attitude_determination((sun_vecs,mag_vec,gyr_vecs),(isun_vecs,imag_vecs
     att_quat/=norm(att_quat)
     return att_quat
 end
+
+
+"""
+satqua, satvec, omega = attitute_empty(satqua, satvec, omega)
+
+衛星姿勢をそのまま返す空関数（+ 誤差を与える）
+
+# Argments
+ - `satqua` : 衛星姿勢
+ - `satvec` : 衛星速度@ECEF
+ - `omega`  : 衛星回転速度
+
+"""
+function attitude_empty(satqua, satvec, omega)
+
+    return satqua, satvec, omega
+end

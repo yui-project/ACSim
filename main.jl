@@ -6,6 +6,7 @@ include("internal_model/magnetic_torque.jl")
 include("dynamics/dynamics.jl")
 #include("satellite/satellite.jl")
 include("satellite/attitude_control.jl")
+include("satellite/attitude_determination.jl")
 include("satellite/target_decision.jl")
 include("plot/plot_plots.jl")
 #include("plot/plot_makie.jl")
@@ -144,8 +145,6 @@ function main()
 		airtorques[i,:] = Ta
 		disturbance[i,:] = Ts + Ta
 
-		#磁気トルカの計算
-		
 		#M = [0., 0., 0.]
 		magvec_scsfqua = qua \ mag_vec_seof * qua
 		atoms_denses[i] = atoms_dens
@@ -154,7 +153,11 @@ function main()
 		println("  scsf_mag_vec:", magvec_scsf)
 		atoms_denses[i] = atoms_dens
 
-		"""
+
+		# 姿勢決定による衛星姿勢情報の取得
+		qua_ad, vel_ad, omega_ad = attitude_empty(qua, v_ecef_log[i, :], sat_ω[i, :])
+
+		#=
 		# B-dot法による回転抑制制御
 		if i==1
 			M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i, :])
@@ -173,7 +176,7 @@ function main()
 		mtq_currentlog[i, :] = i_m 
 		Tm = magnetic_torque(i_m, magvec_scsf)
 		magtorques[i,:] = Tm
-		"""
+		=#
 
 		# Cross-Product法による指向制御
 		
@@ -187,7 +190,7 @@ function main()
 		end
 		=#
 		tar_qua = targetqua
-		Treq, M = cross_product(tar_qua, qua, kp, kr, sat_ω[i, :], magvec_scsf)
+		Treq, M = cross_product(tar_qua, qua_ad, kp, kr, omega_ad, magvec_scsf)
 		# T_reqs[i, :] = Treq
 		M_reqs[i, :] = M
 		println("request_Moment:", M)
