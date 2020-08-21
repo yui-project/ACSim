@@ -206,22 +206,3 @@ function targetqua_dicision(targetplace, satplace, satvelo, sat_axisval)
     return targetqua
 end
 
-
-"""
-shootingplan_dicision
-# 工事中
-"""
-
-function shootingplan_dicision(shootingtime, shooting_vec, current_time, current_attqua)
-    targetqua = SatelliteToolbox.Quaternion(0., 1., 0., 0.)
-    camera_initialdir = [0., 0., 1.]
-
-    camera_dir = current_attqua * camera_initialdir / current_attqua
-
-    θ = acos(dot(camera_dir, shooting_vec) / (norm(camera_dir)*norm(shooting_vec)))
-    axis_seof = cross(camera_dir, shooting_vec)
-    axis_seof = axis_seof / norm(axis_seof)
-
-    axis_scsf = current_attqua \ axis_seof * current_attqua
-
-end

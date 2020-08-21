@@ -30,7 +30,7 @@ function plot_vec(value,filename)
 	savefig("./figs/" * filename * ".png")
 end
 
-function plot_vec_range(value,xrange, yrange,zrange, filename)
+function plot_vec_range(value, xrange, yrange,zrange, filename)
 	plot(value[:,1], value[:, 2], value[:, 3], xlims=(xrange[1], xrange[2]), ylims=(yrange[1], yrange[2]), zlims=(zrange[1], zrange[2]))
 	xlabel!("x")
 	ylabel!("y")

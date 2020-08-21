@@ -82,9 +82,7 @@ B-dot法により
 function B_dot(B, ω, ω_b)
 	k = zeros(3)
 
-	k[1] = 10000
-	k[2] = 10000
-	k[3] = 10000
+	k = [0.1, 0.1, 0.1]
 
 	m = -1 * k .* cross(B, ω)
 
@@ -217,3 +215,42 @@ function mm2current_measure(M)
 
 	return i
 end
+
+"""
+crossproduct_adj = target_adjustment(targetqua)
+
+"""
+
+function crossproduct_adj(targetqua, attqua, kp, kr, ω, B)
+    error_norm = 1.
+    n_best = 0
+    for n=1:36
+
+        qua_z = SatelliteToolbox.Quaternion(cos(deg2rad(n*10/2)), 0., 0., sin(deg2rad(n*10/2)))
+        tarqua_adj = targetqua * qua_z
+        treq, m = cross_product(tarqua_adj, attqua, kp, kr, ω, B)
+        terror = dot(treq, B)/(norm(B)^2) * B
+
+        if norm(terror) < error_norm
+            error_norm = norm(terror)
+            n_best = n
+        end
+
+    end
+    
+    qua_z = SatelliteToolbox.Quaternion(cos(deg2rad(n_best*10)), 0., 0., sin(deg2rad(n_best*10)))
+	tarqua_adj = targetqua * qua_z
+	
+	Treq, M = cross_product(tarqua_adj, attqua, kp, kr, ω, B)
+
+	return Treq, M, n_best
+end
+
+
+
+
+"""
+M = attcon_bdot()
+
+"""
+

@@ -71,9 +71,11 @@ function main()
 	magtorques = zeros(DataNum, 3)
 	M_reqs = zeros(DataNum, 3)
 	T_reqs = zeros(DataNum, 3)
+	Tms = zeros(DataNum, 3)
+	Terrors = zeros(DataNum, 3)
 
 	# 誤差検証
-	x_ecef_error = [100000., 100000., 100000. ]
+	x_ecef_error = [0., 0., 0. ]
 	
 
 	# 撮影用パラメータの設定
@@ -96,6 +98,8 @@ function main()
 	campos_log = zeros(239, 2)
 	tarpos_log = zeros(239, 2)
 	j = 1
+
+	controlmethod = zeros(DataNum)
 
 	# sat_attqua_elements[1, : ] = [targetqua.q0, targetqua.q1, targetqua.q2, targetqua.q3]
 
@@ -179,7 +183,7 @@ function main()
 		=#
 
 		# Cross-Product法による指向制御
-		
+		#=
 		kp = 0.000030
 		kr = 0.00030
 		#=
@@ -192,6 +196,40 @@ function main()
 		tar_qua = targetqua
 		Treq, M = cross_product(tar_qua, qua_ad, kp, kr, omega_ad, magvec_scsf)
 		# T_reqs[i, :] = Treq
+		=#
+
+		kp = 0.000030
+		kr = 0.00030
+		
+		
+		tar_qua = targetqua
+		if i==1 
+			Treq, M = cross_product(tar_qua, qua_ad, kp, kr, omega_ad, magvec_scsf)	
+			Terror = dot(Treq, magvec_scsf)/(norm(magvec_scsf)^2) * magvec_scsf
+		elseif	target_deffs[i-1] > 10
+			Treq, M = cross_product(tar_qua, qua_ad, kp, kr, omega_ad, magvec_scsf)
+			Terror = dot(Treq, magvec_scsf)/(norm(magvec_scsf)^2) * magvec_scsf
+			#=
+			if Treq[1]*(Treq[1]-Terror[1]) < 0 || Treq[2]*(Treq[2]-Terror[2]) < 0 || Treq[3]*(Treq[3]-Terror[3]) < 0
+				M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i-1, :])
+				controlmethod[i] = 1
+				Treq = cross(M, magvec_scsf)
+			end
+			=#
+		else
+			M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i-1, :])
+			controlmethod[i] = 1
+			Treq = cross(M, magvec_scsf)
+			Terror = [0., 0., 0.]
+		end
+		
+		
+		
+		# Treq, M = cross_product(targetqua,qua_ad, kp, kr, omega_ad, magvec_scsf)
+		# Treq, M, n = crossproduct_adj(targetqua, qua_ad, kp, kr, omega_ad, magvec_scsf)
+		# Terrors[i, :] = dot(Treq, magvec_scsf)/(norm(magvec_scsf)^2) * magvec_scsf
+		controlmethod[i] = n
+
 		M_reqs[i, :] = M
 		println("request_Moment:", M)
 		
@@ -205,6 +243,12 @@ function main()
 				i_m = reduce_rate * i_m
 			end
 		end
+		# M = [0.005, 0., 0.]
+		# i_m = M
+		println("  current_mag:",i_m)
+		mtq_currentlog[i, :] = i_m
+		Tm = magnetic_torque(i_m, magvec_scsf)
+		magtorques[i,:] = Tm
 		
 		# Treqの離散化
 		Tmax = 1.0*10^(-5) # 最大出力トルク
@@ -215,12 +259,7 @@ function main()
 		T_reqs[i, :] = Treq
 
 
-		# M = [0.005, 0., 0.]
-		# i_m = M
-		println("  current_mag:",i_m)
-		mtq_currentlog[i, :] = i_m
-		Tm = magnetic_torque(i_m, magvec_scsf)
-		magtorques[i,:] = Tm
+		
 		
 
 		# ダイナミクス
@@ -229,9 +268,9 @@ function main()
 		    0.       (0.1^2)/6 0.;
 		    0.       0.        (0.1^2)/6]
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Ta+Ts+Tm, I, dt)
-		# next_qua, ω = dynamics(qua, sat_ω[i,:], Tm, I, dt)
+		next_qua, ω = dynamics(qua, sat_ω[i,:], Tm, I, dt)
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Treq, I, dt)
-		next_qua, ω = dynamics(qua, sat_ω[i,:], Treq+Ta+Ts, I, dt)
+		# next_qua, ω = dynamics(qua, sat_ω[i,:], Treq+Ta+Ts, I, dt)
 		sat_attqua_elements[i+1, :] = [next_qua.q0, next_qua.q1, next_qua.q2, next_qua.q3]
 		sat_ω[i+1, :] = ω
 		println("quaternion:", qua)
@@ -287,32 +326,38 @@ function main()
 	plot = true
 
 	if plot == true
-		plot_2scalar(JD_log,dotvs,"dotvs")
+		plot_2scalar([1:DataNum],dotvs,"dotvs")
 		plot_vec(direct_on_SCOFs,"direct_on_SCOFs")
 		
-		plot_2scalar(JD_log,atoms_denses,"atoms_dens")
-		plot_2scalar(JD_log,x_geod_log[:,3],"height")
-		plot_vec(mag_vecs,"mag_vec")
+		plot_2scalar([1:DataNum],atoms_denses,"atoms_dens")
+		plot_2scalar([1:DataNum],x_geod_log[:,3],"height")
+		plot_vec_range(mag_vecs,[-50000, 50000], [-50000, 50000], [-50000, 50000],"mag_vec")
+		plot_3scalar([1:DataNum], mag_vecs[1:DataNum, 1], mag_vecs[1:DataNum, 2], mag_vecs[1:DataNum, 3], ["x", "y", "z"], "magvec_elements")
 		plot_vec(sun_vecs,"sun_vec")
 		plot_vec(x_ecef_log,"x_ecef_log")
 		plot_vec(v_ecef_log,"v_ecef_log")
 		plot_vec(x_geod_log,"x_geod_log")
-		plot_2scalar(x_geod_log[:,2],x_geod_log[:,1],"x_geod_log_2d")
+		plot_2scalar(rad2deg.(x_geod_log[:,2]),rad2deg.(x_geod_log[:,1]),"x_geod_log_2d")
+		plot_2scalar(rad2deg.(x_geod_log[shoot_time-120:shoot_time+120,2]),rad2deg.(x_geod_log[shoot_time-120:shoot_time+120,1]),"x_geod_log_2d_2")
 		plot_vec(disturbance, "disturbance")
-		plot_3scalar(JD_log, sat_ω[1:DataNum, 1], sat_ω[1:DataNum, 2], sat_ω[1:DataNum, 3], ["x", "y", "z"], "omega")
-		plot_3scalar(JD_log, airtorques[1:DataNum, 1], suntorques[1:DataNum, 1], magtorques[1:DataNum, 1], ["air", "sun", "mag"], "x_torques")
-		plot_3scalar(JD_log, airtorques[1:DataNum, 2], suntorques[1:DataNum, 2], magtorques[1:DataNum, 2], ["air", "sun", "mag"], "y_torques")
-		plot_3scalar(JD_log, airtorques[1:DataNum, 3], suntorques[1:DataNum, 3], magtorques[1:DataNum, 3], ["air", "sun", "mag"], "z_torques")
-		plot_3scalar(JD_log, T_reqs[1:DataNum, 1], T_reqs[1:DataNum, 2], T_reqs[1:DataNum, 3], ["x", "y", "z"], "request_torques")
+		plot_3scalar([1:DataNum], sat_ω[1:DataNum, 1], sat_ω[1:DataNum, 2], sat_ω[1:DataNum, 3], ["x", "y", "z"], "omega")
+		plot_3scalar([1:DataNum], airtorques[1:DataNum, 1], suntorques[1:DataNum, 1], magtorques[1:DataNum, 1], ["air", "sun", "mag"], "x_torques")
+		plot_3scalar([1:DataNum], airtorques[1:DataNum, 2], suntorques[1:DataNum, 2], magtorques[1:DataNum, 2], ["air", "sun", "mag"], "y_torques")
+		plot_3scalar([1:DataNum], airtorques[1:DataNum, 3], suntorques[1:DataNum, 3], magtorques[1:DataNum, 3], ["air", "sun", "mag"], "z_torques")
+		plot_3scalar([1:DataNum], T_reqs[1:DataNum, 1], T_reqs[1:DataNum, 2], T_reqs[1:DataNum, 3], ["x", "y", "z"], "request_torques")
 		plot_vec(T_reqs, "request_torques_vec")
-		plot_3scalar(JD_log, mtq_currentlog[:, 1], mtq_currentlog[:, 2], mtq_currentlog[:, 3], ["x", "y", "z"], "MTQcurrent")
-		plot_3scalar(JD_log, sat_attqua_elements[1:DataNum, 2], sat_attqua_elements[1:DataNum, 3], sat_attqua_elements[1:DataNum, 4], ["q1", "q2", "q3"], "attqua_1")
-		plot_2scalar(JD_log, sat_attqua_elements[1:DataNum, 1], "attqua_2")
+		plot_3scalar([1:DataNum], mtq_currentlog[:, 1], mtq_currentlog[:, 2], mtq_currentlog[:, 3], ["x", "y", "z"], "MTQcurrent")
+		plot_3scalar([1:DataNum], sat_attqua_elements[1:DataNum, 2], sat_attqua_elements[1:DataNum, 3], sat_attqua_elements[1:DataNum, 4], ["q1", "q2", "q3"], "attqua_1")
+		plot_2scalar([1:DataNum], sat_attqua_elements[1:DataNum, 1], "attqua_2")
 		plot_vec(cam_dir, "cam_dir")
-		plot_2scalar(JD_log, target_deffs, "target_deffs")
-		plot_2scalar(JD_log[shoot_time-120:shoot_time+120], target_deffs[shoot_time-120:shoot_time+120], "target_deffs2")
+		plot_2scalar([1:DataNum], target_deffs, "target_deffs")
+		plot_2scalar([shoot_time-120:shoot_time+120], target_deffs[shoot_time-120:shoot_time+120], "target_deffs2")
 		# plot_2scalar(campos_log[:, 1], campos_log[:, 2], "campos")
 		plot_2scalar(tarpos_log[:, 1], tarpos_log[:, 2], "tarpos")
+		plot_2scalar([1:DataNum], controlmethod[:], "controlmethod")
+		plot_3scalar([1:DataNum], Terrors[:, 1], T_reqs[1:DataNum, 1], magtorques[1:DataNum, 1], ["-", "reqs", "out"], "x_torques_check")
+		plot_3scalar([1:DataNum], Terrors[:, 2], T_reqs[1:DataNum, 2], magtorques[1:DataNum, 2], ["-", "reqs", "out"], "y_torques_check")
+		plot_3scalar([1:DataNum], Terrors[:, 3], T_reqs[1:DataNum, 3], magtorques[1:DataNum, 3], ["-", "reqs", "out"], "z_torques_check")
 
 		# 撮影限界	画像サイズ4:3として範囲換算
 		picture_radius = x_geod_log[shoot_time, 3] * tand(cam_viewangle/2)
