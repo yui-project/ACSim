@@ -61,7 +61,7 @@ function main()
 
 	#衛星姿勢用変数
 	sat_attqua_elements = zeros(DataNum+1, 4)
-	sat_attqua_elements[1,:] = [cos(deg2rad(70)), -sin(deg2rad(70))/sqrt(2), sin(deg2rad(70))/sqrt(2), 0.]
+	sat_attqua_elements[1,:] = [cos(deg2rad(35)), -sin(deg2rad(35))/sqrt(2), sin(deg2rad(35))/sqrt(2), 0.]
 	sat_ω = zeros(DataNum+1, 3)
 	sat_ω[1, :] = [0., 0., 0.]
 
@@ -76,16 +76,16 @@ function main()
 
 	# 誤差検証
 	x_ecef_error = [0., 0., 0. ]
+	targetqua_error = SatelliteToolbox.Quaternion(cos(deg2rad(5)), 0, sin(deg2rad(5)), 0)
 	
 
 	# 撮影用パラメータの設定
 	limit_time = DataNum
-	targetpos_geod = [0., 2., 25.7]
+	targetpos_geod = [0., -50., 25.7]
 	targetpos_ecef = GeodetictoECEF(deg2rad(targetpos_geod[1]), deg2rad(targetpos_geod[2]), targetpos_geod[3])
 	cam_viewangle = 40
 	sat_axisval = 80
 	cam_origindir = [0., 0., 1.]
-	shoot_timelength = 1200
 	satqua = SatelliteToolbox.Quaternion(sat_attqua_elements[1,1], sat_attqua_elements[1,2], sat_attqua_elements[1,3], sat_attqua_elements[1,4])
 	shoot_time = shootingtime_decision2(x_ecef_log[1:DataNum, :], targetpos_ecef, 1, limit_time, cam_viewangle, sat_axisval)
 	println("shoottime", shoot_time)
@@ -93,6 +93,7 @@ function main()
 	# targetqua = SatelliteToolbox.Quaternion(cos(deg2rad(44)), sin(deg2rad(44))/sqrt(2), sin(deg2rad(44))/sqrt(2), 0.)
 	println("targetqua:", targetqua)
 	cam_dir = zeros(DataNum, 3)
+	tar_dir = zeros(DataNum, 3)
 	target_deffs = zeros(DataNum)
 	targetlocus_picture = zeros(240, 2)
 	campos_log = zeros(239, 2)
@@ -201,34 +202,35 @@ function main()
 		kp = 0.000030
 		kr = 0.00030
 		
-		
+		#=
 		tar_qua = targetqua
-		if i==1 
-			Treq, M = cross_product(tar_qua, qua_ad, kp, kr, omega_ad, magvec_scsf)	
-			Terror = dot(Treq, magvec_scsf)/(norm(magvec_scsf)^2) * magvec_scsf
-		elseif	target_deffs[i-1] > 10
-			Treq, M = cross_product(tar_qua, qua_ad, kp, kr, omega_ad, magvec_scsf)
-			Terror = dot(Treq, magvec_scsf)/(norm(magvec_scsf)^2) * magvec_scsf
-			#=
-			if Treq[1]*(Treq[1]-Terror[1]) < 0 || Treq[2]*(Treq[2]-Terror[2]) < 0 || Treq[3]*(Treq[3]-Terror[3]) < 0
-				M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i-1, :])
-				controlmethod[i] = 1
-				Treq = cross(M, magvec_scsf)
-			end
-			=#
+		if i == 1 
+			M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i, :])
+			controlmethod[i] = -1
+			Treq = cross(M, magvec_scsf)
+			Terror = [0., 0., 0.]
+
+		elseif norm(shoot_time - i) > 150  #&& norm(shoot_time-540 - i) > 150
+			M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i-1, :])
+			controlmethod[i] = -1
+			Treq = cross(M, magvec_scsf)
+			Terror = [0., 0., 0.]
+		
 		else
 			M = B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i-1, :])
 			controlmethod[i] = 1
 			Treq = cross(M, magvec_scsf)
 			Terror = [0., 0., 0.]
+		
 		end
+		Terrors[i, :] = Terror
+		=#
 		
-		
-		
-		# Treq, M = cross_product(targetqua,qua_ad, kp, kr, omega_ad, magvec_scsf)
+		tarqua = targetqua_error * targetqua
+		Treq, M = cross_product(tarqua,qua_ad, kp, kr, omega_ad, magvec_scsf)
 		# Treq, M, n = crossproduct_adj(targetqua, qua_ad, kp, kr, omega_ad, magvec_scsf)
 		# Terrors[i, :] = dot(Treq, magvec_scsf)/(norm(magvec_scsf)^2) * magvec_scsf
-		controlmethod[i] = n
+		# controlmethod[i] = n
 
 		M_reqs[i, :] = M
 		println("request_Moment:", M)
@@ -268,9 +270,9 @@ function main()
 		    0.       (0.1^2)/6 0.;
 		    0.       0.        (0.1^2)/6]
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Ta+Ts+Tm, I, dt)
-		next_qua, ω = dynamics(qua, sat_ω[i,:], Tm, I, dt)
+		# next_qua, ω = dynamics(qua, sat_ω[i,:], Tm, I, dt)
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Treq, I, dt)
-		# next_qua, ω = dynamics(qua, sat_ω[i,:], Treq+Ta+Ts, I, dt)
+		next_qua, ω = dynamics(qua, sat_ω[i,:], Treq+Ta+Ts, I, dt)
 		sat_attqua_elements[i+1, :] = [next_qua.q0, next_qua.q1, next_qua.q2, next_qua.q3]
 		sat_ω[i+1, :] = ω
 		println("quaternion:", qua)
@@ -288,6 +290,9 @@ function main()
 			cθ = 1
 		end
 		target_deffs[i] = rad2deg(acos(cθ))
+
+		tar_dir_q = targetqua * cam_origindir / targetqua
+		tar_dir[i, :] = [tar_dir_q.q1, tar_dir_q.q2, tar_dir_q.q3]
 
 		# 撮影地点の画像上の軌跡
 		if norm(i - shoot_time) < 120
@@ -350,6 +355,7 @@ function main()
 		plot_3scalar([1:DataNum], sat_attqua_elements[1:DataNum, 2], sat_attqua_elements[1:DataNum, 3], sat_attqua_elements[1:DataNum, 4], ["q1", "q2", "q3"], "attqua_1")
 		plot_2scalar([1:DataNum], sat_attqua_elements[1:DataNum, 1], "attqua_2")
 		plot_vec(cam_dir, "cam_dir")
+		plot_vecs(cam_dir, tar_dir, ["cam", "target"], "cam&tar_dir")
 		plot_2scalar([1:DataNum], target_deffs, "target_deffs")
 		plot_2scalar([shoot_time-120:shoot_time+120], target_deffs[shoot_time-120:shoot_time+120], "target_deffs2")
 		# plot_2scalar(campos_log[:, 1], campos_log[:, 2], "campos")

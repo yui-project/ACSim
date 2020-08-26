@@ -82,7 +82,7 @@ B-dot法により
 function B_dot(B, ω, ω_b)
 	k = zeros(3)
 
-	k = [0.1, 0.1, 0.1]
+	k = [1000, 1000, 1000]
 
 	m = -1 * k .* cross(B, ω)
 
