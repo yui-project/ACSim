@@ -60,7 +60,7 @@ function main()
 	
 
 	# 初期姿勢，角速度の設定
-	sat_attqua_elements[1,:] = [cos(deg2rad(35)), -sin(deg2rad(35))/sqrt(2), sin(deg2rad(35))/sqrt(2), 0.]
+	sat_attqua_elements[1,:] = [cos(deg2rad(30)), sin(deg2rad(30))/sqrt(2), sin(deg2rad(30))/sqrt(2), 0.]
 	sat_ω[1, :] = [0., 0., 0.]
 
 	# 撮影用パラメータの設定
@@ -73,7 +73,7 @@ function main()
 	num = 1                              # ターゲット軌跡記憶用配列のどこまでデータが入ったかを記憶する
 
 	# 制御用パラメータの設定
-	kp = 0.000030                        # クロスプロダクト則比例ゲイン
+	kp = 0.000030                       # クロスプロダクト則比例ゲイン
 	kr = 0.00030                         # クロスプロダクト則微分ゲイン
 	mtq_maxcurrent = 0.20                # 磁気トルカの最大駆動電流
 	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
@@ -84,6 +84,10 @@ function main()
 		 0.        0.        (0.1^2)/6]  # 衛星の慣性テンソル
 	target_updatefreq = 12               # 目標姿勢の更新頻度 [step/回]
 	target_updaterange = 120             # 目標姿勢の更新を行う時間範囲（"撮影時刻 ± target_updaterange" の間は目標姿勢の更新を行う）
+
+	# 誤差検証
+	x_ecef_error = [0., 0., 0. ]
+	targetqua_error = SatelliteToolbox.Quaternion(cos(deg2rad(0)), 0, sin(deg2rad(0)), 0)
 
 
 	# 軌道・太陽方向計算については先に行い、全時間分を配列に保存する
@@ -101,10 +105,7 @@ function main()
 	# 初期状態の衛星位置@ECI
 	x_eci_1st = rECEFtoECI(ITRF(), GCRF(), JD_log[1], eop_IAU2000A)*x_ecef_log[1,:]
 		
-	# 誤差検証
-	x_ecef_error = [0., 0., 0. ]
-	targetqua_error = SatelliteToolbox.Quaternion(cos(deg2rad(5)), 0, sin(deg2rad(5)), 0)
-	
+		
 	# 目標姿勢の計算
 	targetpos_ecef = GeodetictoECEF(deg2rad(targetpos_geod[1]), deg2rad(targetpos_geod[2]), targetpos_geod[3])
 	satqua = SatelliteToolbox.Quaternion(sat_attqua_elements[1,1], sat_attqua_elements[1,2], sat_attqua_elements[1,3], sat_attqua_elements[1,4])
@@ -200,7 +201,35 @@ function main()
 		Treq, M = cross_product(tarqua,qua_ad, kp, kr, omega_ad, magvec_scsf)
 		# Treq, M, n = crossproduct_adj(targetqua, qua_ad, kp, kr, omega_ad, magvec_scsf)
 		# controlmethod[i] = n
+		if i == 1
+
+		else
+			if target_deffs[i-1] < 8
+				M =[0, 0, 0]
+				Treq = [0, 0, 0]
+				controlmethod[i] = 1
+			end
+ 		end  
 		Terrors[i, :] = dot(Treq, magvec_scsf)/(norm(magvec_scsf)^2) * magvec_scsf
+		
+
+		# 所望トルクと地磁場のなす角が80°~100°の時はCrossProduct，それ以外はB-dot制御を行う
+		#=
+		tarqua = targetqua_error * targetqua
+		Treq, M = cross_product(tarqua,qua_ad, kp, kr, omega_ad, magvec_scsf)
+		φ = dot(Treq, magvec_scsf) / norm(Treq) / norm(magvec_scsf)
+		if norm(φ) < cos(deg2rad(80))
+			if i==1
+				M = [0, 0, 0] #B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i, :])
+			else
+				M = [0, 0, 0] #B_dot(magvec_scsf, sat_ω[i, :], sat_ω[i-1, :])
+			end
+			Treq = cross(M, magvec_scsf)
+			controlmethod[i] = 1
+		end
+		Terrors[i, :] = dot(Treq, magvec_scsf)/(norm(magvec_scsf)^2) * magvec_scsf
+		=#
+
 		
 		M_reqs[i, :] = M
 		println("request_Moment:", M)
@@ -217,8 +246,8 @@ function main()
 			end
 		end
 		# 駆動電流の離散化
-		# mtqcarrent_resol = mtq_maxcurrent / mtq_scutter
-		# i_m = round.(i_m / mtqcarrent_resol) * mtqcarrent_resol
+		mtqcarrent_resol = mtq_maxcurrent / mtq_scutter
+		i_m = round.(i_m / mtqcarrent_resol) * mtqcarrent_resol
 		Tm = magnetic_torque(i_m, magvec_scsf)
 		mtq_currentlog[i, :] = i_m
 		magtorques[i,:] = Tm
