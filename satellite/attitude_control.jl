@@ -82,7 +82,7 @@ B-dot法により
 function B_dot(B, ω, ω_b)
 	k = zeros(3)
 
-	k = [10000, 10000, 10000]
+	k = [40000, 40000, 40000]
 
 	m = -1 * k .* cross(B, ω)
 
@@ -221,30 +221,27 @@ crossproduct_adj = target_adjustment(targetqua)
 
 """
 
-function crossproduct_adj(targetqua, attqua, kp, kr, ω, B)
-    error_norm = 1.
-    n_best = 0
-    for n=1:36
+function crossproduct_adj(sat_tar, sat_att, kp, kr, ω, B, B2)
+	m = zeros(3)
+	n = 0
+	#必要トルクを求める
+	t_req = lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
 
-        qua_z = SatelliteToolbox.Quaternion(cos(deg2rad(n*10/2)), 0., 0., sin(deg2rad(n*10/2)))
-        tarqua_adj = targetqua * qua_z
-        treq, m = cross_product(tarqua_adj, attqua, kp, kr, ω, B)
-        terror = dot(treq, B)/(norm(B)^2) * B
-
-        if norm(terror) < error_norm
-            error_norm = norm(terror)
-            n_best = n
-        end
-
-    end
-    
-    qua_z = SatelliteToolbox.Quaternion(cos(deg2rad(n_best*10)), 0., 0., sin(deg2rad(n_best*10)))
-	tarqua_adj = targetqua * qua_z
+	t_req1 = [t_req[1], t_req[2], 0.]
+	t_req2 = [0., t_req[2], t_req[3]]
 	
-	Treq, M = cross_product(tarqua_adj, attqua, kp, kr, ω, B)
+	if norm(B2[1]) < norm(B2[3])
+		Treq = t_req1
+	else
+		Treq = t_req2
+		n = 1
+	end
 
-	return Treq, M, n_best
+	M = -(cross(Treq, B/norm(B)))/(norm(B))
+	
+	return Treq, M, n
 end
+
 
 
 
