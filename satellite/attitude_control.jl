@@ -146,7 +146,7 @@ function pseudo_inverse(sat_tar, sat_att, kp, kr, ω, B)
 	#必要トルクを求める
 	t_req = lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
 	m = B_pse*t_req
-	return m
+	return t_req, m
 end
 
 
@@ -245,9 +245,70 @@ end
 
 
 
+"""
+m = cross_product_addIntg(sat_tar, sat_att, kp, kr, ki, ω, B, errIntg)
+
+cross_product法により
+姿勢制御する際に必要な磁気モーメントを求める
+
+# Argments
+ - `sat_tar`：目標姿勢クォータニオン
+ - `sat_att`：現在の衛星姿勢クォータニオン
+ - `kp`：ポイントゲイン
+ - `kr`：レートゲイン
+ - `ki`：積分ゲイン
+ - `ω`：位置ベクトルの角速度（ベクトル）
+ - `B`：地磁気ベクトル@ECEF
+ - `errIntg`：蓄積誤差量
+
+# Return
+ - `m`：必要磁気モーメント
+"""
+function cross_product_addIntg(sat_tar, sat_att, kp, kr, ki, ω, B, errIntg)
+	m = zeros(3)
+	#必要トルクを求める
+	t_req, errIntg = lyapunov_torque_addIntg(sat_tar, sat_att, kp, kr, ki, ω, errIntg)
+	#println("t_req", t_req)
+	#必要磁気モーメントを求める
+	m = -(cross(t_req, B/norm(B)))/(norm(B))
+	return t_req, m, errIntg
+end
 
 """
-M = attcon_bdot()
+t_req  = lyapunov_torque_addIntg(sat_tar, sat_att, kp, kr, ki, ω, errIntg)
 
+リアプノフ関数から目標姿勢までに必要なトルクを求める
+
+# Argments
+ - `sat_tar`：目標姿勢クォータニオン
+ - `sat_att`：現在の衛星姿勢クォータニオン
+ - `kp`：ポイントゲイン
+ - `kr`：レートゲイン
+ - `ki`：積分ゲイン
+ - `ω`：位置ベクトルの角速度（ベクトル）
+ - `errIntg`：蓄積誤差量
+
+# Return
+ - `t_req`：必要トルク
 """
+function lyapunov_torque_addIntg(sat_tar, sat_att, kp, kr, ki, ω, errIntg)
+	q_e = zeros(3)
+	q = zeros(3)
+	q_t = zeros(3)
+	q0 = sat_att.q0
+	q[1] = sat_att.q1
+	q[2] = sat_att.q2
+	q[3] = sat_att.q3
+	q0_t = sat_tar.q0
+	q_t[1] = sat_tar.q1
+	q_t[2] = sat_tar.q2
+	q_t[3] = sat_tar.q3
+	#println("q", q)
+	#println("qt", q_t)
+	q_e = - q0*q + q0*q_t - cross(q,q_t)
+	q0_e = q0 * q0_t + dot(q, q_t)
+	errIntg = errIntg + q0_e
+	#println("qe", q_e)
+	return kp*q_e - kr*ω .+ ki * errIntg, errIntg
+end
 

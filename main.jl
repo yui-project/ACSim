@@ -23,8 +23,8 @@ function main()
 	#=
 	設定パラメータ
 	=#
-	DataNum = 5000 #シミュレータ反復回数
-	dt = 5 ##シミュレータの計算間隔 [s]
+	DataNum = 10000 #シミュレータ反復回数
+	dt = 1 ##シミュレータの計算間隔 [s]
 	start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
 
@@ -41,6 +41,7 @@ function main()
 	# 姿勢
 	sat_attqua_elements = zeros(DataNum+1, 4) # 衛星姿勢クォータニオンの4要素
 	sat_ω = zeros(DataNum+1, 3)               # 衛星の各軸回り角速度@SCSF
+	sat_eularangle = zeros(DataNum, 3)      # 衛星姿勢（オイラー角）
 	# トルク
 	disturbance = zeros(DataNum, 3)           # 擾乱トルクの合計値@SCSF
 	airtorques = zeros(DataNum, 3)            # 空力トルク
@@ -61,7 +62,7 @@ function main()
 	
 
 	# 初期姿勢，角速度の設定
-	sat_attqua_elements[1,:] = [cos(deg2rad(30)), sin(deg2rad(30))/sqrt(2), sin(deg2rad(30))/sqrt(2), 0.]
+	sat_attqua_elements[1,:] = [cosd(5), sind(5)/sqrt(3), sind(5)/sqrt(3), sind(5)/sqrt(3)]
 	sat_ω[1, :] = [0., 0., 0.]
 
 	# 撮影用パラメータの設定
@@ -74,12 +75,13 @@ function main()
 	num = 1                              # ターゲット軌跡記憶用配列のどこまでデータが入ったかを記憶する
 
 	# 制御用パラメータの設定
-	kp = 0.000000007                       # クロスプロダクト則比例ゲイン
-	kr = 0.000000000                         # クロスプロダクト則微分ゲイン
-	mtq_maxcurrent = 0.01                # 磁気トルカの最大駆動電流
-	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
+	kp = 0.00000005                       # クロスプロダクト則比例ゲイン
+	kr = 0.0000000                         # クロスプロダクト則微分ゲイン
+	ki = 0.0000000						# 積分ゲイン
+	mtq_maxcurrent = 0.02                # 磁気トルカの最大駆動電流
+	mtq_scutter = 1000                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
 	Tmax = 1.0*10^(-7)                   # 出力トルクの最大値
-	t_scatternum = 255                   # 出力トルクの分割数 (" ± t_scatternum" 段階で行う)
+	t_scatternum = 1000                   # 出力トルクの分割数 (" ± t_scatternum" 段階で行う)
 	I = [(0.1^2)/6 0.        0.;
 		 0.        (0.1^2)/6 0.;
 		 0.        0.        (0.1^2)/6]  # 衛星の慣性テンソル
@@ -87,6 +89,7 @@ function main()
 	target_updaterange = 120             # 目標姿勢の更新を行う時間範囲（"撮影時刻 ± target_updaterange" の間は目標姿勢の更新を行う）
 	CP2Bdot_delay = -1                    # CP制御の後 nステップはBdot制御を行わない
 	CP2Bdot_count = 0                    # CP制御からのカウント数
+	errIntg = 0.						# 誤差の蓄積量
 
 	# 誤差検証
 	x_ecef_error = [0., 0., 0. ]
@@ -116,6 +119,7 @@ function main()
 	println("shoottime", shoot_time)
 	targetqua = targetqua_dicision(targetpos_ecef, x_ecef_log[shoot_time-target_updaterange, :], v_ecef_log[shoot_time-target_updaterange, :], sat_axisval)
 	println("targetqua:", targetqua)
+	targetqua = SatelliteToolbox.Quaternion(cosd(0), sind(0)/sqrt(3), sind(0)/sqrt(3), sind(0)/sqrt(3))
 	
 	
 	for i=1:DataNum
@@ -184,6 +188,7 @@ function main()
 		
 		tarqua = targetqua_error * targetqua
 		Treq, M = cross_product(tarqua,qua_ad, kp, kr, omega_ad, magvec_scsf)
+		# Treq, M = pseudo_inverse(tarqua, qua_ad,kp, kr, omega_ad, magvec_scsf)
 		# Treq, M, n = crossproduct_adj(targetqua, qua_ad, kp, kr, omega_ad, magvec_scsf)
 		# controlmethod[i] = n
 
@@ -212,8 +217,8 @@ function main()
 		# Tm = collect(inv(ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true)) * Tm)
 		
 		# ダイナミクス
-		next_qua, ω = dynamics(qua, sat_ω[i,:], Ta+Ts+Tm, I, dt)
-		# next_qua, ω = dynamics(qua, sat_ω[i,:], Tm, I, dt)
+		# next_qua, ω = dynamics(qua, sat_ω[i,:], Ta+Ts+Tm, I, dt)
+		next_qua, ω = dynamics(qua, sat_ω[i,:], Tm, I, dt)
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Treq, I, dt)
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Treq+Ta+Ts, I, dt)
 		
@@ -228,6 +233,12 @@ function main()
 		tar_dir_q = targetqua * cam_origindir / targetqua
 		tar_dir[i, :] = [tar_dir_q.q1, tar_dir_q.q2, tar_dir_q.q3]
 
+		# オイラー角
+		roll, pitch, yaw = Euler_Angles(qua \ targetqua)
+		sat_eularangle[i, 1] = roll
+		sat_eularangle[i, 2] = pitch
+		sat_eularangle[i, 3] = yaw
+
 		# 撮影地点の画像上の軌跡計算, 目標姿勢の更新
 		if norm(i - shoot_time) < target_updaterange
 			
@@ -235,7 +246,7 @@ function main()
 			num = num + 1
 			
 			if norm(i-shoot_time) % target_updatefreq == 0
-				targetqua = targetqua_dicision(targetpos_ecef, x_ecef_log[i+target_updatefreq, :], v_ecef_log[i+target_updatefreq, :], sat_axisval)
+				# targetqua = targetqua_dicision(targetpos_ecef, x_ecef_log[i+target_updatefreq, :], v_ecef_log[i+target_updatefreq, :], sat_axisval)
 			end
 			
 		end
@@ -269,6 +280,7 @@ function main()
 		plot_3scalar([1:DataNum], sat_attqua_elements[1:DataNum, 2], sat_attqua_elements[1:DataNum, 3], sat_attqua_elements[1:DataNum, 4], ["q1", "q2", "q3"], "attqua_1")
 		plot_2scalar([1:DataNum], sat_attqua_elements[1:DataNum, 1], "attqua_2")
 		plot_vec(cam_dir, "cam_dir")
+		plot_vec(cam_dir[ DataNum - 1000 : DataNum, : ], "cam_dir2")
 		plot_vecs(cam_dir, tar_dir, ["cam", "target"], "cam&tar_dir")
 		plot_2scalar([1:DataNum], target_deffs, "target_deffs")
 		plot_2scalar([shoot_time-target_updaterange:shoot_time+target_updaterange], target_deffs[shoot_time-target_updaterange:shoot_time+target_updaterange], "target_deffs2")
@@ -279,6 +291,8 @@ function main()
 		plot_3scalar([1:DataNum], Terrors[:, 3], T_reqs[1:DataNum, 3], magtorques[1:DataNum, 3], ["-", "reqs", "out"], "z_torques_check")
 		
 		plot_3scalar([1:DataNum], target_deffs, controlmethod*180, zeros(DataNum), ["targetdeffs", "controlmethod", "-"], "deffs_method_check")
+		
+		plot_3scalar([1:DataNum], sat_eularangle[:, 1], sat_eularangle[:, 2], sat_eularangle[:, 3], ["roll", "pitch", "yaw"], "EularAngleDiffs")
 		
 		# 撮影限界	画像サイズ4:3として範囲換算
 		picture_radius = x_geod_log[shoot_time, 3] * tand(cam_viewangle/2)
