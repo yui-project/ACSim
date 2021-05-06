@@ -75,13 +75,12 @@ function main()
 	num = 1                              # ターゲット軌跡記憶用配列のどこまでデータが入ったかを記憶する
 
 	# 制御用パラメータの設定
-	kp = 0.00000005                       # クロスプロダクト則比例ゲイン
-	kr = 0.0000000                         # クロスプロダクト則微分ゲイン
-	ki = 0.0000000						# 積分ゲイン
-	mtq_maxcurrent = 0.02                # 磁気トルカの最大駆動電流
-	mtq_scutter = 1000                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
+	kp = 0.00000030                       # クロスプロダクト則比例ゲイン
+	kr = 0.000030                         # クロスプロダクト則微分ゲイン
+	mtq_maxcurrent = 0.020              # 磁気トルカの最大駆動電流
+	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
 	Tmax = 1.0*10^(-7)                   # 出力トルクの最大値
-	t_scatternum = 1000                   # 出力トルクの分割数 (" ± t_scatternum" 段階で行う)
+	t_scatternum = 255                   # 出力トルクの分割数 (" ± t_scatternum" 段階で行う)
 	I = [(0.1^2)/6 0.        0.;
 		 0.        (0.1^2)/6 0.;
 		 0.        0.        (0.1^2)/6]  # 衛星の慣性テンソル
@@ -218,9 +217,9 @@ function main()
 		
 		# ダイナミクス
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Ta+Ts+Tm, I, dt)
-		next_qua, ω = dynamics(qua, sat_ω[i,:], Tm, I, dt)
+		# next_qua, ω = dynamics(qua, sat_ω[i,:], Tm, I, dt)
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Treq, I, dt)
-		# next_qua, ω = dynamics(qua, sat_ω[i,:], Treq+Ta+Ts, I, dt)
+		next_qua, ω = dynamics(qua, sat_ω[i,:], Treq+Ta+Ts, I, dt)
 		
 		sat_attqua_elements[i+1, :] = [next_qua.q0, next_qua.q1, next_qua.q2, next_qua.q3]
 		sat_ω[i+1, :] = ω
