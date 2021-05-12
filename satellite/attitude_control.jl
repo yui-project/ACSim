@@ -57,7 +57,11 @@ function lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
 	q_t[1] = sat_tar.q1
 	q_t[2] = sat_tar.q2
 	q_t[3] = sat_tar.q3
+	#println("q", q)
+	#println("qt", q_t)
 	q_e = - q0*q + q0*q_t - cross(q,q_t)
+	# q0_e = q0 * q0_t + dot(q, q_t)
+	#println("qe", q_e)
 	return kp*q_e - kr*ω
 end
 
@@ -78,9 +82,7 @@ B-dot法により
 function B_dot(B, ω, ω_b)
 	k = zeros(3)
 
-	k[1] = 10000
-	k[2] = 10000
-	k[3] = 10000
+	k = [1000, 1000, 1000]
 
 	m = -1 * k .* cross(B, ω)
 
@@ -109,10 +111,12 @@ function cross_product(sat_tar, sat_att, kp, kr, ω, B)
 	m = zeros(3)
 	#必要トルクを求める
 	t_req = lyapunov_torque(sat_tar, sat_att, kp, kr, ω)
+	#println("t_req", t_req)
 	#必要磁気モーメントを求める
 	m = -(cross(t_req, B/norm(B)))/(norm(B))
-	return m
+	return t_req, m
 end
+
 
 
 """
@@ -211,3 +215,42 @@ function mm2current_measure(M)
 
 	return i
 end
+
+"""
+crossproduct_adj = target_adjustment(targetqua)
+
+"""
+
+function crossproduct_adj(targetqua, attqua, kp, kr, ω, B)
+    error_norm = 1.
+    n_best = 0
+    for n=1:36
+
+        qua_z = SatelliteToolbox.Quaternion(cos(deg2rad(n*10/2)), 0., 0., sin(deg2rad(n*10/2)))
+        tarqua_adj = targetqua * qua_z
+        treq, m = cross_product(tarqua_adj, attqua, kp, kr, ω, B)
+        terror = dot(treq, B)/(norm(B)^2) * B
+
+        if norm(terror) < error_norm
+            error_norm = norm(terror)
+            n_best = n
+        end
+
+    end
+    
+    qua_z = SatelliteToolbox.Quaternion(cos(deg2rad(n_best*10)), 0., 0., sin(deg2rad(n_best*10)))
+	tarqua_adj = targetqua * qua_z
+	
+	Treq, M = cross_product(tarqua_adj, attqua, kp, kr, ω, B)
+
+	return Treq, M, n_best
+end
+
+
+
+
+"""
+M = attcon_bdot()
+
+"""
+
