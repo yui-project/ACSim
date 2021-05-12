@@ -120,7 +120,8 @@ T = air_pressure(density, current_qua)
 空力トルクの計算
 
 # Arguments
-- `sun_vecs`: 大気密度
+- `density`: 大気密度
+- `vel_seof`：衛星の速度ベクトル＠SEOF
 - `current_qua`: 現在の姿勢クォータニオン
 
 # Returns

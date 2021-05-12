@@ -13,7 +13,7 @@ mag_tor = magneric_torque(i_m, B)
 
 """
 function magnetic_torque(i_m, B)
-    μ = 5000 #透磁率
+    μ = 5000 #比透磁率
     n = 400 #巻き数
 	L = 80  #コア長さ
 	D = 10  #コア直径
