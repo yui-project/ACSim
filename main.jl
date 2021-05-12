@@ -56,13 +56,13 @@ function main()
 	# 撮影
 	cam_dir = zeros(DataNum, 3)               # カメラ方向ベクトル@SEOF
 	tar_dir = zeros(DataNum, 3)               # 目標方向ベクトル@SEOF
-	target_deffs = zeros(DataNum)             # 目標方向ベクトルとカメラ方向ベクトルとの角度誤差
+	target_diffs = zeros(DataNum)             # 目標方向ベクトルとカメラ方向ベクトルとの角度誤差
 	tarpos_log = zeros(239, 2)                # 撮影画像上でのターゲット位置の軌跡
 	
 	
 
 	# 初期姿勢，角速度の設定
-	sat_attqua_elements[1,:] = [cosd(5), sind(5)/sqrt(3), sind(5)/sqrt(3), sind(5)/sqrt(3)]
+	sat_attqua_elements[1,:] = [cosd(15), sind(15)/sqrt(3), sind(15)/sqrt(3), sind(15)/sqrt(3)]
 	sat_ω[1, :] = [0., 0., 0.]
 
 	# 撮影用パラメータの設定
@@ -77,7 +77,7 @@ function main()
 	# 制御用パラメータの設定
 	kp = 0.00000030                       # クロスプロダクト則比例ゲイン
 	kr = 0.000030                         # クロスプロダクト則微分ゲイン
-	mtq_maxcurrent = 0.020              # 磁気トルカの最大駆動電流
+	mtq_maxcurrent = 0.002              # 磁気トルカの最大駆動電流
 	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
 	Tmax = 1.0*10^(-7)                   # 出力トルクの最大値
 	t_scatternum = 255                   # 出力トルクの分割数 (" ± t_scatternum" 段階で行う)
@@ -88,7 +88,6 @@ function main()
 	target_updaterange = 120             # 目標姿勢の更新を行う時間範囲（"撮影時刻 ± target_updaterange" の間は目標姿勢の更新を行う）
 	CP2Bdot_delay = -1                    # CP制御の後 nステップはBdot制御を行わない
 	CP2Bdot_count = 0                    # CP制御からのカウント数
-	errIntg = 0.						# 誤差の蓄積量
 
 	# 誤差検証
 	x_ecef_error = [0., 0., 0. ]
@@ -227,7 +226,7 @@ function main()
 		println("onega : ", ω)
 
 		# カメラ方向
-		cam_dir[i, :], target_deffs[i] = anglediffs(qua, targetqua, cam_origindir)
+		cam_dir[i, :], target_diffs[i] = anglediffs(qua, targetqua, cam_origindir)
 
 		tar_dir_q = targetqua * cam_origindir / targetqua
 		tar_dir[i, :] = [tar_dir_q.q1, tar_dir_q.q2, tar_dir_q.q3]
@@ -281,15 +280,15 @@ function main()
 		plot_vec(cam_dir, "cam_dir")
 		plot_vec(cam_dir[ DataNum - 1000 : DataNum, : ], "cam_dir2")
 		plot_vecs(cam_dir, tar_dir, ["cam", "target"], "cam&tar_dir")
-		plot_2scalar([1:DataNum], target_deffs, "target_deffs")
-		plot_2scalar([shoot_time-target_updaterange:shoot_time+target_updaterange], target_deffs[shoot_time-target_updaterange:shoot_time+target_updaterange], "target_deffs2")
+		plot_2scalar([1:DataNum], target_diffs, "target_diffs")
+		plot_2scalar([shoot_time-target_updaterange:shoot_time+target_updaterange], target_diffs[shoot_time-target_updaterange:shoot_time+target_updaterange], "target_diffs2")
 		plot_2scalar(tarpos_log[:, 1], tarpos_log[:, 2], "tarpos")
 		plot_2scalar([1:DataNum], controlmethod[:], "controlmethod")
 		plot_3scalar([1:DataNum], Terrors[:, 1], T_reqs[1:DataNum, 1], magtorques[1:DataNum, 1], ["-", "reqs", "out"], "x_torques_check")
 		plot_3scalar([1:DataNum], Terrors[:, 2], T_reqs[1:DataNum, 2], magtorques[1:DataNum, 2], ["-", "reqs", "out"], "y_torques_check")
 		plot_3scalar([1:DataNum], Terrors[:, 3], T_reqs[1:DataNum, 3], magtorques[1:DataNum, 3], ["-", "reqs", "out"], "z_torques_check")
 		
-		plot_3scalar([1:DataNum], target_deffs, controlmethod*180, zeros(DataNum), ["targetdeffs", "controlmethod", "-"], "deffs_method_check")
+		plot_3scalar([1:DataNum], target_diffs, controlmethod*180, zeros(DataNum), ["targetdiffs", "controlmethod", "-"], "diffs_method_check")
 		
 		plot_3scalar([1:DataNum], sat_eularangle[:, 1], sat_eularangle[:, 2], sat_eularangle[:, 3], ["roll", "pitch", "yaw"], "EularAngleDiffs")
 		
@@ -300,7 +299,7 @@ function main()
 		picture_xmax = picture_xratio * picture_radius
 		picture_ymax = picture_yratio * picture_radius
 		plot_2scalar_range(tarpos_log[:, 1], tarpos_log[:, 2], [-1*picture_xmax, picture_xmax], [-1*picture_ymax, picture_ymax], "targetlocus")
-		plot_2scalar(tarpos_log[:, 1], tarpos_log[:, 2], "targetlocus2")
+		
 
 		# plot_2scalar(targetlocus_picture[:, 1], targetlocus_picture[:, 2], "targetlocus")
 		
