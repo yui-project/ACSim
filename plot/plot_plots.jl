@@ -72,5 +72,5 @@ function plot_3scalar(time, value1, value2, value3, valuename, filename)
 	plot!(time, value2, label = valuename[2])
 	plot!(time, value3, label = valuename[3])
 
-	savefig("./figs/" * filename * ".ping")
+	savefig("./figs/" * filename * ".png")
 end
