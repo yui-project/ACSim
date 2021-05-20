@@ -81,9 +81,9 @@ function main()
 	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
 	Tmax = 1.0*10^(-7)                   # 出力トルクの最大値
 	t_scatternum = 255                   # 出力トルクの分割数 (" ± t_scatternum" 段階で行う)
-	I = [(0.1^2)/6 0.        0.;
-		 0.        (0.1^2)/6 0.;
-		 0.        0.        (0.1^2)/6]  # 衛星の慣性テンソル
+	I = [(0.1^2)/3 0.        0.;
+		 0.        (0.1^2)/1.5 0.;
+		 0.        0.        (0.1^2)/1.5]  # 衛星の慣性テンソル
 	target_updatefreq = 12               # 目標姿勢の更新頻度 [step/回]
 	target_updaterange = 120             # 目標姿勢の更新を行う時間範囲（"撮影時刻 ± target_updaterange" の間は目標姿勢の更新を行う）
 	CP2Bdot_delay = -1                    # CP制御の後 nステップはBdot制御を行わない
