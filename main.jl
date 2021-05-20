@@ -28,42 +28,9 @@ function main()
 	start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
 
-	#=
-	データ保存用変数
-	=#
-	# 衛星位置，進行方向
-	dotvs = zeros(DataNum)                    # 進行方向とSCOFx軸とのずれ（内積）
-	direct_on_SCOFs = zeros(DataNum,3)        # SCOF上での衛星の進行方向
-	# 外環境
-	mag_vecs = zeros(DataNum,3)               # 地磁場@SEOF
-	sun_vecs = zeros(DataNum,3)               # 太陽方向@ECEF
-	atoms_denses = zeros(DataNum)             # 大気密度
-	# 姿勢
-	sat_attqua_elements = zeros(DataNum+1, 4) # 衛星姿勢クォータニオンの4要素
-	sat_ω = zeros(DataNum+1, 3)               # 衛星の各軸回り角速度@SCSF
-	sat_eularangle = zeros(DataNum, 3)      # 衛星姿勢（オイラー角）
-	# トルク
-	disturbance = zeros(DataNum, 3)           # 擾乱トルクの合計値@SCSF
-	airtorques = zeros(DataNum, 3)            # 空力トルク
-	suntorques = zeros(DataNum, 3)            # 太陽輻射圧トルク
-	magtorques = zeros(DataNum, 3)            # 磁気トルク
-	# 制御値
-	mtq_currentlog = zeros(DataNum, 3)        # 磁気トルカ入力電流
-	M_reqs = zeros(DataNum, 3)                # 所望磁気モーメント
-	T_reqs = zeros(DataNum, 3)                # 所望トルク
-	Terrors = zeros(DataNum, 3)               # 所望トルクの内，出せないトルク
-	controlmethod = zeros(DataNum)            # どの制御を行っているかの判定
-	# 撮影
-	cam_dir = zeros(DataNum, 3)               # カメラ方向ベクトル@SEOF
-	tar_dir = zeros(DataNum, 3)               # 目標方向ベクトル@SEOF
-	target_diffs = zeros(DataNum)             # 目標方向ベクトルとカメラ方向ベクトルとの角度誤差
-	tarpos_log = zeros(239, 2)                # 撮影画像上でのターゲット位置の軌跡
-	
-	
-
 	# 初期姿勢，角速度の設定
-	sat_attqua_elements[1,:] = [cosd(15), sind(15)/sqrt(3), sind(15)/sqrt(3), sind(15)/sqrt(3)]
-	sat_ω[1, :] = [0., 0., 0.]
+	sat_attqua_Initial = [cosd(15), sind(15)/sqrt(3), sind(15)/sqrt(3), sind(15)/sqrt(3)]
+	sat_ω_Initial = [0., 0., 0.]
 
 	# 撮影用パラメータの設定
 	limit_time = DataNum                 # 計算開始時刻から "limit_time × dt" sec の間に撮影を行う
@@ -89,9 +56,49 @@ function main()
 	CP2Bdot_delay = -1                    # CP制御の後 nステップはBdot制御を行わない
 	CP2Bdot_count = 0                    # CP制御からのカウント数
 
-	# 誤差検証
+	# 誤差検証用パラメータ
 	x_ecef_error = [0., 0., 0. ]
 	targetqua_error = SatelliteToolbox.Quaternion(cos(deg2rad(0)), 0, sin(deg2rad(0)), 0)
+
+
+	#=
+	データ保存用変数
+	=#
+	# 衛星位置，進行方向
+	dotvs = zeros(DataNum)                    # 進行方向とSCOFx軸とのずれ（内積）
+	direct_on_SCOFs = zeros(DataNum,3)        # SCOF上での衛星の進行方向
+	# 外環境
+	mag_vecs = zeros(DataNum,3)               # 地磁場@SEOF
+	sun_vecs = zeros(DataNum,3)               # 太陽方向@ECEF
+	atoms_denses = zeros(DataNum)             # 大気密度
+	# 姿勢
+	sat_attqua_elements = zeros(DataNum+1, 4) # 衛星姿勢クォータニオンの4要素
+	sat_ω = zeros(DataNum+1, 3)               # 衛星の各軸回り角速度@SCSF
+	sat_eularangle = zeros(DataNum, 3)      # 衛星姿勢（オイラー角）
+	# トルク
+	disturbance = zeros(DataNum, 3)           # 擾乱トルクの合計値@SCSF
+	airtorques = zeros(DataNum, 3)            # 空力トルク
+
+	fixairtorques = zeros(DataNum, 3)            # 空力トルク
+
+	suntorques = zeros(DataNum, 3)            # 太陽輻射圧トルク
+	magtorques = zeros(DataNum, 3)            # 磁気トルク
+	# 制御値
+	mtq_currentlog = zeros(DataNum, 3)        # 磁気トルカ入力電流
+	M_reqs = zeros(DataNum, 3)                # 所望磁気モーメント
+	T_reqs = zeros(DataNum, 3)                # 所望トルク
+	Terrors = zeros(DataNum, 3)               # 所望トルクの内，出せないトルク
+	controlmethod = zeros(DataNum)            # どの制御を行っているかの判定
+	# 撮影
+	cam_dir = zeros(DataNum, 3)               # カメラ方向ベクトル@SEOF
+	tar_dir = zeros(DataNum, 3)               # 目標方向ベクトル@SEOF
+	target_diffs = zeros(DataNum)             # 目標方向ベクトルとカメラ方向ベクトルとの角度誤差
+	tarpos_log = zeros(target_updaterange*2, 2)  # 撮影画像上でのターゲット位置の軌跡
+	
+	
+	# 初期値の代入
+	sat_attqua_elements[1,:] = sat_attqua_Initial
+	sat_ω[1, :] = sat_ω_Initial
 
 
 	# 軌道・太陽方向計算については先に行い、全時間分を配列に保存する
@@ -157,8 +164,10 @@ function main()
 		v_scof = [norm(v_ecef_log[i,:]), 0., 0.]
 		Ts = sun_pressure(sun_vecs[i,:], qua)
 		Ta = air_pressure(atoms_denses[i], v_scof, qua)
+		fTa = fix_air_pressure(atoms_denses[i], v_scof, qua)
 		suntorques[i,:] = Ts
 		airtorques[i,:] = Ta
+		fixairtorques[i,:] = fTa
 		disturbance[i,:] = Ts + Ta
 
 
@@ -288,6 +297,11 @@ function main()
 		plot_3scalar([1:DataNum], Terrors[:, 2], T_reqs[1:DataNum, 2], magtorques[1:DataNum, 2], ["-", "reqs", "out"], "y_torques_check")
 		plot_3scalar([1:DataNum], Terrors[:, 3], T_reqs[1:DataNum, 3], magtorques[1:DataNum, 3], ["-", "reqs", "out"], "z_torques_check")
 		
+		plot_3scalar([1:DataNum], zeros(DataNum), airtorques[1:DataNum, 1], fixairtorques[1:DataNum, 1], ["-", "before", "after"], "x_airtorques_check")
+		plot_3scalar([1:DataNum], zeros(DataNum), airtorques[1:DataNum, 2], fixairtorques[1:DataNum, 2], ["-", "before", "after"], "y_airtorques_check")
+		plot_3scalar([1:DataNum], zeros(DataNum), airtorques[1:DataNum, 3], fixairtorques[1:DataNum, 3], ["-", "before", "after"], "z_airtorques_check")
+		
+
 		plot_3scalar([1:DataNum], target_diffs, controlmethod*180, zeros(DataNum), ["targetdiffs", "controlmethod", "-"], "diffs_method_check")
 		
 		plot_3scalar([1:DataNum], sat_eularangle[:, 1], sat_eularangle[:, 2], sat_eularangle[:, 3], ["roll", "pitch", "yaw"], "EularAngleDiffs")

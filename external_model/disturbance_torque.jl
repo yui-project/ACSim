@@ -193,3 +193,76 @@ function air_pressure(density, vel_seof, current_qua)
     return T
     
 end
+
+"""
+T = fix_air_pressure(density, current_qua)
+
+空力トルクの計算
+
+# Arguments
+- `density`: 大気密度
+- `vel_seof`：衛星の速度ベクトル＠SEOF
+- `current_qua`: 現在の姿勢クォータニオン
+
+# Returns
+- `T`: 空力トルク
+"""
+function fix_air_pressure(density, vel_seof, current_qua)
+    sat_size = [0.1 , 0.1 , 0.1] #衛星各辺長さ [x,y,z][m]
+    cm = [0.005, 0.005, 0.005] #衛星重心のずれ [x,y,z][m]
+    Cd = 1.12 #抗力係数（各面を正方形と近似）
+
+    # 速度ベクトルのBody座標系への変換
+    vel_scsfqua = current_qua \ vel_seof * current_qua
+    vel_scsf = [vel_scsfqua.q1, vel_scsfqua.q2, vel_scsfqua.q3]
+
+
+    T = [0., 0., 0.]
+
+    #x面に働く力
+    if vel_scsf[1] >= 0
+        n = [1., 0., 0.]
+        r = [sat_size[1]/2, 0., 0.] - cm
+    else
+        n = [-1., 0., 0.]
+        r = [-sat_size[1]/2, 0., 0.] - cm
+    end
+    A = sat_size[2]*sat_size[3]
+    
+
+    F = -1/2 *Cd * density * dot(n, vel_scsf) * vel_scsf * A
+    dT = cross(r, F)
+    T = T + dT
+
+    # y面に働く力
+    if vel_scsf[2] >= 0
+        n = [0., 1., 0.]
+        r = [ 0., sat_size[2]/2, 0.] - cm
+    else
+        n = [0., -1., 0.]
+        r = [0., -sat_size[2]/2, 0.] - cm
+    end
+    A = sat_size[1]*sat_size[3]
+
+    F = -1/2 *Cd * density * dot(n, vel_scsf) * vel_scsf * A
+    dT = cross(r, F)
+    T = T + dT
+
+    # z面に働く力
+    if vel_scsf[3] >= 0
+        n = [0., 0., 1.]
+        r = [0., 0., sat_size[3]/2] - cm
+    else
+        n = [0., 0., 1.]
+        r = [0., 0., -sat_size[1]/2] - cm
+    end
+    A = sat_size[1]*sat_size[2]
+    
+    F = -1/2 *Cd * density * dot(n, vel_scsf) * vel_scsf * A
+    dT = cross(r, F)
+    T = T + dT
+
+
+    return T
+    
+end
