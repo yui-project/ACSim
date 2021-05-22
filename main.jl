@@ -51,6 +51,9 @@ function main()
 	I = [(0.1^2)/6 0.        0.;
 		 0.        (0.1^2)/6 0.;
 		 0.        0.        (0.1^2)/6]  # 衛星の慣性テンソル
+	sat_size = [0.1 , 0.1 , 0.1]         # 衛星各辺長さ [x,y,z][m]
+	cm = [0.005, 0.005, 0.005]           # 衛星体心から見た重心の位置ベクトル [x,y,z][m]
+	Cd = 2.0                             # 抗力係数（宇宙空間では通常2~3）
 	target_updatefreq = 12               # 目標姿勢の更新頻度 [step/回]
 	target_updaterange = 120             # 目標姿勢の更新を行う時間範囲（"撮影時刻 ± target_updaterange" の間は目標姿勢の更新を行う）
 	CP2Bdot_delay = -1                    # CP制御の後 nステップはBdot制御を行わない
@@ -79,8 +82,7 @@ function main()
 	disturbance = zeros(DataNum, 3)           # 擾乱トルクの合計値@SCSF
 	airtorques = zeros(DataNum, 3)            # 空力トルク
 
-	fixairtorques = zeros(DataNum, 3)            # 空力トルク
-
+	
 	suntorques = zeros(DataNum, 3)            # 太陽輻射圧トルク
 	magtorques = zeros(DataNum, 3)            # 磁気トルク
 	# 制御値
@@ -162,12 +164,10 @@ function main()
 		
 		#擾乱の計算
 		v_scof = [norm(v_ecef_log[i,:]), 0., 0.]
-		Ts = sun_pressure(sun_vecs[i,:], qua)
-		Ta = air_pressure(atoms_denses[i], v_scof, qua)
-		fTa = fix_air_pressure(atoms_denses[i], v_scof, qua)
+		Ts = sun_pressure(sun_vecs[i,:], qua, sat_size, cm)
+		Ta = air_pressure(atoms_denses[i], v_scof, qua, sat_size, cm, Cd)
 		suntorques[i,:] = Ts
 		airtorques[i,:] = Ta
-		fixairtorques[i,:] = fTa
 		disturbance[i,:] = Ts + Ta
 
 
@@ -297,10 +297,7 @@ function main()
 		plot_3scalar([1:DataNum], Terrors[:, 2], T_reqs[1:DataNum, 2], magtorques[1:DataNum, 2], ["-", "reqs", "out"], "y_torques_check")
 		plot_3scalar([1:DataNum], Terrors[:, 3], T_reqs[1:DataNum, 3], magtorques[1:DataNum, 3], ["-", "reqs", "out"], "z_torques_check")
 		
-		plot_3scalar([1:DataNum], zeros(DataNum), airtorques[1:DataNum, 1], fixairtorques[1:DataNum, 1], ["-", "before", "after"], "x_airtorques_check")
-		plot_3scalar([1:DataNum], zeros(DataNum), airtorques[1:DataNum, 2], fixairtorques[1:DataNum, 2], ["-", "before", "after"], "y_airtorques_check")
-		plot_3scalar([1:DataNum], zeros(DataNum), airtorques[1:DataNum, 3], fixairtorques[1:DataNum, 3], ["-", "before", "after"], "z_airtorques_check")
-		
+	
 
 		plot_3scalar([1:DataNum], target_diffs, controlmethod*180, zeros(DataNum), ["targetdiffs", "controlmethod", "-"], "diffs_method_check")
 		
