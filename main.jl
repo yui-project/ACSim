@@ -23,7 +23,7 @@ function main()
 	#=
 	設定パラメータ
 	=#
-	DataNum = 1000 #シミュレータ反復回数
+	DataNum = 5000 #シミュレータ反復回数
 	dt = 1 ##シミュレータの計算間隔 [s]
 	start_time = DateTime(2021, 5, 23, 18, 00, 00)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
