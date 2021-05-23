@@ -23,9 +23,9 @@ function main()
 	#=
 	設定パラメータ
 	=#
-	DataNum = 10000 #シミュレータ反復回数
+	DataNum = 1000 #シミュレータ反復回数
 	dt = 1 ##シミュレータの計算間隔 [s]
-	start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
+	start_time = DateTime(2021, 5, 23, 18, 00, 00)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
 
 	# 初期姿勢，角速度の設定
@@ -48,11 +48,11 @@ function main()
 	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
 	Tmax = 1.0*10^(-7)                   # 出力トルクの最大値
 	t_scatternum = 255                   # 出力トルクの分割数 (" ± t_scatternum" 段階で行う)
-	I = [(0.1^2)/6 0.        0.;
-		 0.        (0.1^2)/6 0.;
-		 0.        0.        (0.1^2)/6]  # 衛星の慣性テンソル
-	sat_size = [0.1 , 0.1 , 0.1]         # 衛星各辺長さ [x,y,z][m]
-	cm = [0.005, 0.005, 0.005]           # 衛星体心から見た重心の位置ベクトル [x,y,z][m]
+	I = [7/900     0.        0.;
+		 0.        7/900     0.;
+		 0.        0.        1/900]  # 衛星の慣性テンソル
+	sat_size = [0.1 , 0.1 , 0.2]         # 衛星各辺長さ [x,y,z][m]
+	cm = [0., 0., 1/60]              # 衛星体心から見た重心の位置ベクトル [x,y,z][m]
 	Cd = 2.0                             # 抗力係数（宇宙空間では通常2~3）
 	target_updatefreq = 12               # 目標姿勢の更新頻度 [step/回]
 	target_updaterange = 120             # 目標姿勢の更新を行う時間範囲（"撮影時刻 ± target_updaterange" の間は目標姿勢の更新を行う）
@@ -211,14 +211,14 @@ function main()
 		println("request_Moment:", M)
 		
 		i_m = mm2current_theory(M)
-		i_m = digitizing_3elesvec(i_m, mtq_maxcurrent, mtq_scutter, true)
+		#i_m = digitizing_3elesvec(i_m, mtq_maxcurrent, mtq_scutter, true)
 		Tm = magnetic_torque(i_m, magvec_scsf)
 		mtq_currentlog[i, :] = i_m
 		magtorques[i,:] = Tm
 		println("  current_mag:",i_m)
 		
 		# Treqの離散化
-		Treq = digitizing_3elesvec(Treq, Tmax, t_scatternum, true)
+		#Treq = digitizing_3elesvec(Treq, Tmax, t_scatternum, true)
 		T_reqs[i, :] = Treq
 		
 		# Tm = collect(inv(ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true)) * Tm)
@@ -263,6 +263,7 @@ function main()
 	plot = true
 
 	if plot == true
+		plot_3scalar([1:DataNum], M_reqs[1:DataNum, 1],M_reqs[1:DataNum, 2], M_reqs[1:DataNum, 3], ["x", "y", "z"], "mag_momentvec_elements")
 		plot_2scalar([1:DataNum],dotvs,"dotvs")
 		plot_vec(direct_on_SCOFs,"direct_on_SCOFs")
 		
