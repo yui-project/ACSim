@@ -98,44 +98,6 @@ function main()
 	tarpos_log = zeros(target_updaterange*2, 2)  # 撮影画像上でのターゲット位置の軌跡
 	
 	
-<<<<<<< HEAD
-
-	# 初期姿勢，角速度の設定
-	sat_attqua_elements[1,:] = [cosd(15), sind(15)/sqrt(3), sind(15)/sqrt(3), sind(15)/sqrt(3)]
-	sat_ω[1, :] = [0., 0., 0.]
-
-	# 撮影用パラメータの設定
-	limit_time = DataNum                 # 計算開始時刻から "limit_time × dt" sec の間に撮影を行う
- 	targetpos_geod = [0., -50., 25.7]    # 撮影対象の位置@Geodetic
-	cam_viewangle = 40                   # カメラの視野角
-	sat_axisval = 80                     # 撮影を許可する角度範囲（直下向きを0°とし，それと撮影時カメラ方向との角度差に対する制限）
-	cam_origindir = [0., 0., 1.]         # カメラの方向ベクトル@SCSF
-	picture_aspectratio = [4, 3]         # 撮影画像の縦横比
-	num = 1                              # ターゲット軌跡記憶用配列のどこまでデータが入ったかを記憶する
-
-	# 制御用パラメータの設定
-	kp = 0.00000030                       # クロスプロダクト則比例ゲイン
-	kr = 0.000030                         # クロスプロダクト則微分ゲイン
-	mtq_maxcurrent = 0.002              # 磁気トルカの最大駆動電流
-	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
-	Tmax = 1.0*10^(-7)                   # 出力トルクの最大値
-	t_scatternum = 255                   # 出力トルクの分割数 (" ± t_scatternum" 段階で行う)
-	I = [(0.1^2)/3 0.        0.;
-		 0.        (0.1^2)/1.5 0.;
-		 0.        0.        (0.1^2)/1.5]  # 衛星の慣性テンソル
-	target_updatefreq = 12               # 目標姿勢の更新頻度 [step/回]
-	target_updaterange = 120             # 目標姿勢の更新を行う時間範囲（"撮影時刻 ± target_updaterange" の間は目標姿勢の更新を行う）
-	CP2Bdot_delay = -1                    # CP制御の後 nステップはBdot制御を行わない
-	CP2Bdot_count = 0                    # CP制御からのカウント数
-
-	# 誤差検証
-	x_ecef_error = [0., 0., 0. ]
-	targetqua_error = SatelliteToolbox.Quaternion(cos(deg2rad(0)), 0, sin(deg2rad(0)), 0)
-
-	# 初期値の代入
-	sat_attqua_elements[1,:] = sat_attqua_Initial
-	sat_ω[1, :] = sat_ω_Initial
-
 
 
 	# 軌道・太陽方向計算については先に行い、全時間分を配列に保存する
