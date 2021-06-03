@@ -46,15 +46,13 @@ function external_model(current_time,r_ecef, r_geod,r_eci_1st, eop_IAU2000A, sun
      # 基準ベクトル(シミュレーション初期衛星位置@ECI)とのなす角を求める
     r_eci = rECEFtoECI(ITRF(), GCRF(), jd, eop_IAU2000A)*r_ecef
     cθ = dot(r_eci_1st,r_eci) / (norm(r_eci_1st)*norm(r_eci))
-    sθ = norm(cross(r_eci_1st, r_eci)) / (norm(r_eci_1st)*norm(r_eci))
+    rcross = cross(r_eci_1st, r_eci)
     if cθ > 1
-        θ = π/2
-    elseif cθ < -1
         θ = π/2
     else
         θ = acos(cθ)
     end
-    if sθ < 0
+    if rcross[3] < 0 
         θ = 2π - θ
     end
      # indexからどの要素を抜き出すか
@@ -99,7 +97,9 @@ function sunvector_model(JD_1st, tles)
 
     # x方向成分
     for i = 1:length(sun_angle_xp)
-        if isnan(sun_angle_xp[i])
+        if isnan(sun_angle_xp[i]) && isnan(sun_angle_xm[i])
+            sun_vec[i, 2] = 0.
+        elseif isnan(sun_angle_xp[i])
             sun_vec[i, 2] = -1*cos(sun_angle_xm[i])
         else
             sun_vec[i, 2] = cos(sun_angle_xp[i])
@@ -110,7 +110,9 @@ function sunvector_model(JD_1st, tles)
     sun_angle_yp = satellite_sun_angle_earth_pointing(JD_1st, a, tles[1].e, tles[1].i, tles[1].M, tles[1].Ω, 1, [0, 1, 0])
     sun_angle_ym = satellite_sun_angle_earth_pointing(JD_1st, a, tles[1].e, tles[1].i, tles[1].M, tles[1].Ω, 1, [0, -1, 0])
     for i = 1:length(sun_angle_yp)
-        if isnan(sun_angle_yp[i])
+        if isnan(sun_angle_yp[i]) && isnan(sun_angle_ym[i])
+            sun_vec[i, 3] = 0.
+        elseif isnan(sun_angle_yp[i])
             sun_vec[i, 3] = -1*cos(sun_angle_ym[i])
         else
             sun_vec[i, 3] = cos(sun_angle_yp[i])
@@ -121,7 +123,9 @@ function sunvector_model(JD_1st, tles)
     sun_angle_zp = satellite_sun_angle_earth_pointing(JD_1st, a, tles[1].e, tles[1].i, tles[1].M, tles[1].Ω, 1, [0, 0, 1])
     sun_angle_zm = satellite_sun_angle_earth_pointing(JD_1st, a, tles[1].e, tles[1].i, tles[1].M, tles[1].Ω, 1, [0, 0, -1])
     for i = 1:length(sun_angle_zp)
-        if isnan(sun_angle_zp[i])
+        if isnan(sun_angle_zp[i]) && isnan(sun_angle_zm[i])
+            sun_vec[i, 4] = 0.
+        elseif isnan(sun_angle_zp[i])
             sun_vec[i, 4] = -1*cos(sun_angle_zm[i])
         else
             sun_vec[i, 4] = cos(sun_angle_zp[i])
