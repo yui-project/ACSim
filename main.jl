@@ -25,7 +25,7 @@ function main()
 	=#
 	DataNum = 10000 #シミュレータ反復回数
 	dt = 1 ##シミュレータの計算間隔 [s]
-	start_time = DateTime(2021, 05, 23, 18, 00, 00)	#シミュレート開始時刻
+	start_time = DateTime(2021, 06, 8, 12, 00, 00)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
 
 	#=
@@ -81,9 +81,9 @@ function main()
 	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
 	Tmax = 1.0*10^(-7)                   # 出力トルクの最大値
 	t_scatternum = 255                   # 出力トルクの分割数 (" ± t_scatternum" 段階で行う)
-	I = [(0.1^2)/6 0.        0.;
-		 0.        (0.1^2)/6 0.;
-		 0.        0.        (0.1^2)/6]  # 衛星の慣性テンソル
+	I = [7/900     0.        0.;
+	0.        7/900     0.;
+	0.        0.        1/900]  # 衛星の慣性テンソル
 	target_updatefreq = 12               # 目標姿勢の更新頻度 [step/回]
 	target_updaterange = 120             # 目標姿勢の更新を行う時間範囲（"撮影時刻 ± target_updaterange" の間は目標姿勢の更新を行う）
 	CP2Bdot_delay = -1                    # CP制御の後 nステップはBdot制御を行わない
@@ -292,6 +292,8 @@ function main()
 		plot_3scalar([1:DataNum], target_diffs, controlmethod*180, zeros(DataNum), ["targetdiffs", "controlmethod", "-"], "diffs_method_check")
 		
 		plot_3scalar([1:DataNum], sat_eularangle[:, 1], sat_eularangle[:, 2], sat_eularangle[:, 3], ["roll", "pitch", "yaw"], "EularAngleDiffs")
+
+		plot_3scalar([1:DataNum], M_reqs[1:DataNum, 1], M_reqs[1:DataNum, 2], M_reqs[1:DataNum, 3], ["x", "y", "z"], "M")
 		
 		# 撮影限界	画像サイズ4:3として範囲換算
 		picture_radius = x_geod_log[shoot_time, 3] * tand(cam_viewangle/2)
