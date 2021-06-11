@@ -25,7 +25,7 @@ function main()
 	=#
 	DataNum = 10000 #シミュレータ反復回数
 	dt = 1 ##シミュレータの計算間隔 [s]
-	start_time = DateTime(2019, 12, 19, 3, 27, 10)	#シミュレート開始時刻
+	start_time = DateTime(2021, 05, 23, 18, 00, 00)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
 
 	# 初期姿勢，角速度の設定
@@ -98,9 +98,11 @@ function main()
 	tarpos_log = zeros(target_updaterange*2, 2)  # 撮影画像上でのターゲット位置の軌跡
 	
 	
+
 	# 初期値の代入
 	sat_attqua_elements[1,:] = sat_attqua_Initial
 	sat_ω[1, :] = sat_ω_Initial
+
 
 
 	# 軌道・太陽方向計算については先に行い、全時間分を配列に保存する
@@ -126,7 +128,7 @@ function main()
 	println("shoottime", shoot_time)
 	targetqua = targetqua_dicision(targetpos_ecef, x_ecef_log[shoot_time-target_updaterange, :], v_ecef_log[shoot_time-target_updaterange, :], sat_axisval)
 	println("targetqua:", targetqua)
-	targetqua = SatelliteToolbox.Quaternion(cosd(0), sind(0)/sqrt(3), sind(0)/sqrt(3), sind(0)/sqrt(3))
+	# targetqua = SatelliteToolbox.Quaternion(cosd(0), sind(0)/sqrt(3), sind(0)/sqrt(3), sind(0)/sqrt(3))
 	
 	
 	for i=1:DataNum
@@ -211,14 +213,14 @@ function main()
 		println("request_Moment:", M)
 		
 		i_m = mm2current_theory(M)
-		i_m = digitizing_3elesvec(i_m, mtq_maxcurrent, mtq_scutter, true)
+		# i_m = digitizing_3elesvec(i_m, mtq_maxcurrent, mtq_scutter, true)
 		Tm = magnetic_torque(i_m, magvec_scsf)
 		mtq_currentlog[i, :] = i_m
 		magtorques[i,:] = Tm
 		println("  current_mag:",i_m)
 		
 		# Treqの離散化
-		Treq = digitizing_3elesvec(Treq, Tmax, t_scatternum, true)
+		# Treq = digitizing_3elesvec(Treq, Tmax, t_scatternum, true)
 		T_reqs[i, :] = Treq
 		
 		# Tm = collect(inv(ecef_to_DCM(x_ecef_log[i,:],v_ecef_log[i,:],true)) * Tm)
@@ -228,7 +230,7 @@ function main()
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Tm, I, dt)
 		# next_qua, ω = dynamics(qua, sat_ω[i,:], Treq, I, dt)
 		next_qua, ω = dynamics(qua, sat_ω[i,:], Treq+Ta+Ts, I, dt)
-		
+
 		sat_attqua_elements[i+1, :] = [next_qua.q0, next_qua.q1, next_qua.q2, next_qua.q3]
 		sat_ω[i+1, :] = ω
 		println("quaternion:", qua)
@@ -271,6 +273,7 @@ function main()
 		plot_vec_range(mag_vecs,[-50000, 50000], [-50000, 50000], [-50000, 50000],"mag_vec")
 		plot_3scalar([1:DataNum], mag_vecs[1:DataNum, 1], mag_vecs[1:DataNum, 2], mag_vecs[1:DataNum, 3], ["x", "y", "z"], "magvec_elements")
 		plot_vec(sun_vecs,"sun_vec")
+		plot_3scalar([1:DataNum], sun_vecs[1:DataNum, 1], sun_vecs[1:DataNum, 2], sun_vecs[1:DataNum, 3], ["x", "y", "z"], "sunvec_elements")
 		plot_vec(x_ecef_log,"x_ecef_log")
 		plot_vec(v_ecef_log,"v_ecef_log")
 		plot_vec(x_geod_log,"x_geod_log")
@@ -314,6 +317,8 @@ function main()
 
 		# plot_2scalar(targetlocus_picture[:, 1], targetlocus_picture[:, 2], "targetlocus")
 		
+		
+
 	end
 
 	

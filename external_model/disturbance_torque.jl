@@ -201,67 +201,73 @@ function sun_pressure(sun_vecs, current_qua)
     ρs = 0.6 #鏡面反射割合
     ρd = 0.3 #散乱反射割合
     ρa = 0.1 #吸収割合
-
-
-    #太陽方向ベクトルのBody座標系変換
-    sunvecs_scsfqua = current_qua \ sun_vecs * current_qua
-    #println(sunvecs_scsfqua)
-    sunvecs_scsf = [sunvecs_scsfqua.q1, sunvecs_scsfqua.q2, sunvecs_scsfqua.q3]
-
     T = [0., 0., 0.]
 
-    #x面に働く力
-    if sunvecs_scsf[1] >= 0
-        n = [1., 0., 0.]
-        cf = [sat_size[1]/2, 0., 0.]
+    if sun_vecs == [0., 0., 0.]
+        return T
     else
-        n = [-1., 0., 0.]
-        cf = [-sat_size[1]/2, 0., 0.]
+
+
+        #太陽方向ベクトルのBody座標系変換
+        sunvecs_scsfqua = current_qua \ sun_vecs * current_qua
+        #println(sunvecs_scsfqua)
+        sunvecs_scsf = [sunvecs_scsfqua.q1, sunvecs_scsfqua.q2, sunvecs_scsfqua.q3]
+
+
+        #x面に働く力
+        if sunvecs_scsf[1] >= 0
+            n = [1., 0., 0.]
+            cf = [sat_size[1]/2, 0., 0.]
+        else
+            n = [-1., 0., 0.]
+            cf = [-sat_size[1]/2, 0., 0.]
+        end
+        S = -sunvecs_scsf / norm(sunvecs_scsf)
+        A = sat_size[2]*sat_size[3]
+        P = I/c
+
+        F =P*A*dot(n,S)*((ρa+ρd)*S+(2*ρs+2/3*ρd)*n)
+        r = cf - cm
+
+        T = T + cross(r,F)
+
+        # y面に働く力
+        if sunvecs_scsf[2] >= 0
+            n = [0., 1., 0.]
+            cf = [ 0., sat_size[2]/2, 0.]
+        else
+            n = [0., -1., 0.]
+            cf = [0., -sat_size[2]/2, 0.]
+        end
+        S = -sunvecs_scsf / norm(sunvecs_scsf)
+        A = sat_size[1]*sat_size[3]
+        P = I/c
+
+        F = P*A*dot(n,S)*((ρa+ρd)*S+(2*ρs+2/3*ρd)*n)
+        r = cf - cm
+
+        T = T + cross(r,F)
+
+        # z面に働く力
+        if sunvecs_scsf[3] >= 0
+            n = [0., 0., 1.]
+            cf = [0., 0., sat_size[3]/2]
+        else
+            n = [0., 0., 1.]
+            cf = [0., 0., -sat_size[1]/2]
+        end
+        S = -sunvecs_scsf / norm(sunvecs_scsf)
+        A = sat_size[1]*sat_size[2]
+        P = I/c
+
+        F = P*A*dot(n,S)*((ρa+ρd)*S+(2*ρs+2/3*ρd)*n)
+        r = cf - cm
+
+        T = T + cross(r,F)
+
+        return T
+
     end
-    S = -sunvecs_scsf / norm(sunvecs_scsf)
-    A = sat_size[2]*sat_size[3]
-    P = I/c
-
-    F =P*A*dot(n,S)*((ρa+ρd)*S+(2*ρs+2/3*ρd)*n)
-    r = cf - cm
-
-    T = T + cross(r,F)
-
-    # y面に働く力
-    if sunvecs_scsf[2] >= 0
-        n = [0., 1., 0.]
-        cf = [ 0., sat_size[2]/2, 0.]
-    else
-        n = [0., -1., 0.]
-        cf = [0., -sat_size[2]/2, 0.]
-    end
-    S = -sunvecs_scsf / norm(sunvecs_scsf)
-    A = sat_size[1]*sat_size[3]
-    P = I/c
-
-    F = P*A*dot(n,S)*((ρa+ρd)*S+(2*ρs+2/3*ρd)*n)
-    r = cf - cm
-
-    T = T + cross(r,F)
-
-    # z面に働く力
-    if sunvecs_scsf[3] >= 0
-        n = [0., 0., 1.]
-        cf = [0., 0., sat_size[3]/2]
-    else
-        n = [0., 0., - 1.]
-        cf = [0., 0., -sat_size[3]/2]
-    end
-    S = -sunvecs_scsf / norm(sunvecs_scsf)
-    A = sat_size[1]*sat_size[2]
-    P = I/c
-
-    F = P*A*dot(n,S)*((ρa+ρd)*S+(2*ρs+2/3*ρd)*n)
-    r = cf - cm
-
-    T = T + cross(r,F)
-
-    return T
 
 end
 
