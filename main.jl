@@ -23,7 +23,7 @@ function main()
 	#=
 	設定パラメータ
 	=#
-	DataNum = 10000 #シミュレータ反復回数
+	DataNum = 5000 #シミュレータ反復回数
 	dt = 1 ##シミュレータの計算間隔 [s]
 	start_time = DateTime(2021, 05, 23, 18, 00, 00)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
@@ -34,7 +34,7 @@ function main()
 
 	# 撮影用パラメータの設定
 	limit_time = DataNum                 # 計算開始時刻から "limit_time × dt" sec の間に撮影を行う
- 	targetpos_geod = [0., -50., 25.7]    # 撮影対象の位置@Geodetic
+ 	targetpos_geod = [-40., -110., 25.7]    # 撮影対象の位置@Geodetic
 	cam_viewangle = 40                   # カメラの視野角
 	sat_axisval = 80                     # 撮影を許可する角度範囲（直下向きを0°とし，それと撮影時カメラ方向との角度差に対する制限）
 	cam_origindir = [0., 0., 1.]         # カメラの方向ベクトル@SCSF
@@ -43,7 +43,7 @@ function main()
 
 	# 制御用パラメータの設定
 	kp = 0.00000030                       # クロスプロダクト則比例ゲイン
-	kr = 0.000030                         # クロスプロダクト則微分ゲイン
+	kr = 0.0000030                         # クロスプロダクト則微分ゲイン
 	mtq_maxcurrent = 0.002              # 磁気トルカの最大駆動電流
 	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
 	Tmax = 1.0*10^(-7)                   # 出力トルクの最大値
