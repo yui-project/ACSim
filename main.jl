@@ -23,7 +23,7 @@ function main()
 	#=
 	設定パラメータ
 	=#
-	DataNum = 10000 #シミュレータ反復回数
+	DataNum = 5000 #シミュレータ反復回数
 	dt = 1 ##シミュレータの計算間隔 [s]
 	start_time = DateTime(2021, 06, 8, 12, 00, 00)	#シミュレート開始時刻
 	TLEFileName = "./orbit/ISS_TLE.txt"
@@ -75,8 +75,8 @@ function main()
 	num = 1                              # ターゲット軌跡記憶用配列のどこまでデータが入ったかを記憶する
 
 	# 制御用パラメータの設定
-	kp = 0.00000030                       # クロスプロダクト則比例ゲイン
-	kr = 0.0000030                         # クロスプロダクト則微分ゲイン
+	kp = 0.00000040                       # クロスプロダクト則比例ゲイン
+	kr = 0.000020                         # クロスプロダクト則微分ゲイン
 	mtq_maxcurrent = 0.002              # 磁気トルカの最大駆動電流
 	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
 	Tmax = 1.0*10^(-7)                   # 出力トルクの最大値
@@ -293,7 +293,9 @@ function main()
 		
 		plot_3scalar([1:DataNum], sat_eularangle[:, 1], sat_eularangle[:, 2], sat_eularangle[:, 3], ["roll", "pitch", "yaw"], "EularAngleDiffs")
 
-		plot_3scalar([1:DataNum], M_reqs[1:DataNum, 1], M_reqs[1:DataNum, 2], M_reqs[1:DataNum, 3], ["x", "y", "z"], "M")
+		plot_3scalar_label([1:DataNum], M_reqs[1:DataNum, 1], M_reqs[1:DataNum, 2], M_reqs[1:DataNum, 3], ["x", "y", "z"], "M", ["time [s]", "desired magnetic moment [A/m2]"])
+		plot_2scalar_label([1:DataNum], target_diffs, "target_diffs", ["time[s]", "angler error [deg]"])
+		plot_3scalar_label([1:DataNum], sat_ω[1:DataNum, 1], sat_ω[1:DataNum, 2], sat_ω[1:DataNum, 3], ["x", "y", "z"], "omega", ["time [s]", "angular velocity[rad/s]"])
 		
 		# 撮影限界	画像サイズ4:3として範囲換算
 		picture_radius = x_geod_log[shoot_time, 3] * tand(cam_viewangle/2)
@@ -306,7 +308,19 @@ function main()
 
 		# plot_2scalar(targetlocus_picture[:, 1], targetlocus_picture[:, 2], "targetlocus")
 		
-		
+		M_max = [0., 0., 0.]
+		for j=1:DataNum
+			if abs(M_reqs[j,1]) > M_max[1]
+				M_max[1] = abs(M_reqs[j,1])
+			end
+			if abs(M_reqs[j,2]) > M_max[2]
+				M_max[2] = abs(M_reqs[j,2])
+			end
+			if abs(M_reqs[j,3]) > M_max[3]
+				M_max[3] = abs(M_reqs[j,3])
+			end
+		end
+		println("M_max : ", M_max)
 
 	end
 

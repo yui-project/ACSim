@@ -74,3 +74,17 @@ function plot_3scalar(time, value1, value2, value3, valuename, filename)
 
 	savefig("./figs/" * filename * ".png")
 end
+
+function plot_3scalar_label(time, value1, value2, value3, valuename, filename, label)
+	plot(time, value1, label = valuename[1], xlabel=label[1], ylabel=label[2])
+	plot!(time, value2, label = valuename[2])
+	plot!(time, value3, label = valuename[3])
+
+	savefig("./figs/" * filename * ".png")
+end
+
+function plot_2scalar_label(time,value,filename, label)
+	plot(time,value, xlabel=label[1], ylabel=label[2])
+	savefig("./figs/" * filename * ".png")
+	
+end
