@@ -62,7 +62,7 @@ function main()
 	
 
 	# 初期姿勢，角速度の設定
-	sat_attqua_elements[1,:] = [cosd(15), sind(15)/sqrt(3), sind(15)/sqrt(3), sind(15)/sqrt(3)]
+	sat_attqua_elements[1,:] = [cosd(45), sind(45)/sqrt(3), sind(45)/sqrt(3), sind(45)/sqrt(3)]
 	sat_ω[1, :] = [0., 0., 0.]
 
 	# 撮影用パラメータの設定
@@ -75,8 +75,8 @@ function main()
 	num = 1                              # ターゲット軌跡記憶用配列のどこまでデータが入ったかを記憶する
 
 	# 制御用パラメータの設定
-	kp = 0.00000025                       # クロスプロダクト則比例ゲイン
-	kr = 0.000040                         # クロスプロダクト則微分ゲイン
+	kp = 0.00000050                       # クロスプロダクト則比例ゲイン
+	kr = 0.000060                         # クロスプロダクト則微分ゲイン
 	mtq_maxcurrent = 0.002              # 磁気トルカの最大駆動電流
 	mtq_scutter = 255                    # 磁気トルカの駆動電流分割数（" ± mtq_scutter" 段階で行う）
 	Tmax = 1.0*10^(-7)                   # 出力トルクの最大値
@@ -117,7 +117,7 @@ function main()
 	println("shoottime", shoot_time)
 	targetqua = targetqua_dicision(targetpos_ecef, x_ecef_log[shoot_time-target_updaterange, :], v_ecef_log[shoot_time-target_updaterange, :], sat_axisval)
 	println("targetqua:", targetqua)
-	# targetqua = SatelliteToolbox.Quaternion(cosd(0), sind(0)/sqrt(3), sind(0)/sqrt(3), sind(0)/sqrt(3))
+	targetqua = SatelliteToolbox.Quaternion(cosd(0), sind(0)/sqrt(3), sind(0)/sqrt(3), sind(0)/sqrt(3))
 	
 	
 	for i=1:DataNum
@@ -227,6 +227,8 @@ function main()
 
 		# カメラ方向
 		cam_dir[i, :], target_diffs[i] = anglediffs(qua, targetqua, cam_origindir)
+		println("target_diffs : ", target_diffs[i])
+
 
 		tar_dir_q = targetqua * cam_origindir / targetqua
 		tar_dir[i, :] = [tar_dir_q.q1, tar_dir_q.q2, tar_dir_q.q3]
